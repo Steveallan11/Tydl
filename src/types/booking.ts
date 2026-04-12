@@ -53,6 +53,7 @@ export interface BookingFormData {
   serviceType?: ServiceType;
   postcode?: string;
   propertySize?: PropertySize;
+  fullAddress?: string;
   supplies?: SuppliesOption;
   frequency?: Frequency;
   addOns: AddOn[];
@@ -62,4 +63,5 @@ export interface BookingFormData {
   lastName?: string;
   email?: string;
   phone?: string;
+  customerNotes?: string;
 }

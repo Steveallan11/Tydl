@@ -1,39 +1,64 @@
+import { useNavigate } from 'react-router-dom';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { useBooking } from '../../context/BookingContext';
+import { PricingBreakdownComponent } from '../../components/booking/PricingBreakdown';
 
 export function PriceSummary() {
+  const navigate = useNavigate();
+  const { formData, pricing } = useBooking();
+
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-2xl mx-auto px-6 py-12">
       <StepIndicator currentStep={7} totalSteps={9} />
 
       <Card>
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">Price Summary</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Review Your Booking</h1>
+        <p className="text-slate-600 mb-8">Everything locked in. Ready to proceed?</p>
 
-        <div className="bg-slate-50 rounded-lg p-6 mb-6 space-y-3">
-          <div className="flex justify-between text-slate-700">
-            <span>Regular Clean (2 bedrooms)</span>
-            <span>£90.00</span>
+        {/* Booking Details */}
+        <div className="bg-slate-50 rounded-lg p-6 mb-6 space-y-4">
+          <div className="flex justify-between">
+            <span className="text-slate-700">Service</span>
+            <span className="font-semibold text-slate-900">{pricing.details.baseService}</span>
           </div>
-          <div className="flex justify-between text-slate-700">
-            <span>Oven cleaning</span>
-            <span>£25.00</span>
+          <div className="flex justify-between">
+            <span className="text-slate-700">Date & Time</span>
+            <span className="font-semibold text-slate-900">
+              {formData.scheduledDate} at {formData.scheduledTime}
+            </span>
           </div>
-          <div className="border-t border-slate-200 pt-3 flex justify-between font-bold text-lg">
-            <span>Total</span>
-            <span>£115.00</span>
+          <div className="flex justify-between">
+            <span className="text-slate-700">Supplies</span>
+            <span className="font-semibold text-slate-900">
+              {formData.supplies === 'platform' ? 'We Provide' : 'You Provide'}
+            </span>
           </div>
+          {formData.frequency && (
+            <div className="flex justify-between">
+              <span className="text-slate-700">Frequency</span>
+              <span className="font-semibold text-slate-900 capitalize">{formData.frequency}</span>
+            </div>
+          )}
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-blue-900">
-            ✓ This booking is for one clean on your selected date and time.
+        {/* Pricing Breakdown */}
+        <PricingBreakdownComponent pricing={pricing} />
+
+        <div className="bg-gradient-to-r from-accent-50 to-orange-50 border border-accent-200 rounded-lg p-4 mt-6">
+          <p className="text-sm text-orange-900">
+            ✓ <strong>Price locked in.</strong> This is what you'll pay. No hidden fees, no surprises.
           </p>
         </div>
 
-        <div className="flex gap-4 justify-between">
-          <Button variant="outline">Back</Button>
-          <Button>Proceed to Payment</Button>
+        <div className="flex gap-4 justify-between pt-8">
+          <Button variant="outline" onClick={() => navigate('/book/addons')}>
+            ← Back
+          </Button>
+          <Button onClick={() => navigate('/book/checkout')}>
+            Proceed to Payment →
+          </Button>
         </div>
       </Card>
     </div>
