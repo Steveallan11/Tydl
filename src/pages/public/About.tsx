@@ -4,59 +4,82 @@ import { Button } from '../../components/common/Button';
 export function About() {
   return (
     <main className="bg-white">
-      {/* Header */}
-      <section className="bg-brand-50 py-16">
+      {/* Header - Premium */}
+      <section className="bg-gradient-to-br from-brand-600 to-blue-600 text-white py-20">
         <div className="max-w-4xl mx-auto px-6">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">About Tydl</h1>
-          <p className="text-lg text-slate-600">
-            Fast cleaning for busy people.
+          <h1 className="text-5xl font-bold mb-4">About Tydl</h1>
+          <p className="text-xl text-blue-100">
+            We built a cleaning service for people who value their time.
           </p>
         </div>
       </section>
 
       {/* Mission */}
-      <section className="py-16">
+      <section className="py-24">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="max-w-2xl mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-6">Why We Built Tydl</h2>
-            <p className="text-slate-600 text-lg leading-relaxed mb-4">
-              Booking a cleaner shouldn't feel like a hassle. You shouldn't need to:
-            </p>
-            <ul className="space-y-2 text-slate-600 mb-8">
-              <li>• Wait on hold</li>
-              <li>• Get quotes from 5 different companies</li>
-              <li>• Worry about hidden fees</li>
-              <li>• Hope someone shows up</li>
-            </ul>
-            <p className="text-slate-600 text-lg leading-relaxed">
-              <strong>Tydl is different.</strong> Book in 90 seconds. Get a real person assigned.
-              Pay a fair price. Your home gets clean. Repeat.
-            </p>
+          <div className="max-w-3xl">
+            <h2 className="text-4xl font-bold text-slate-900 mb-8">Why We Built Tydl</h2>
+
+            <div className="bg-gradient-to-r from-brand-50 to-blue-50 border border-brand-200 rounded-xl p-8 mb-12">
+              <p className="text-slate-900 text-lg leading-relaxed mb-6">
+                Booking a cleaner shouldn't feel like a hassle. You shouldn't need to:
+              </p>
+              <ul className="space-y-3 text-slate-700">
+                <li className="flex gap-3">
+                  <span className="text-brand-600 font-bold">✗</span>
+                  <span>Wait on hold for 20 minutes</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-brand-600 font-bold">✗</span>
+                  <span>Get wildly different quotes from 5 companies</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-brand-600 font-bold">✗</span>
+                  <span>Discover hidden fees at checkout</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-brand-600 font-bold">✗</span>
+                  <span>Hope someone actually shows up</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="border-l-4 border-brand-600 pl-8">
+              <p className="text-lg text-slate-900 font-semibold mb-3">
+                Tydl is different.
+              </p>
+              <p className="text-slate-600 text-lg leading-relaxed">
+                Book in 90 seconds. See your cleaner assigned within 24 hours. Pay the exact price we promised. Your home gets clean. Rebook in one click. Repeat forever.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Values */}
-      <section className="bg-slate-50 py-16">
+      <section className="bg-slate-50 py-24">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-slate-900 mb-12">What We Stand For</h2>
+          <h2 className="text-4xl font-bold text-slate-900 mb-16 text-center">What We Stand For</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Speed</h3>
+            <div className="bg-white rounded-xl p-8 border border-slate-200 hover:border-brand-500 hover:shadow-lg transition-all">
+              <div className="text-5xl mb-4">⚡</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Speed</h3>
               <p className="text-slate-600">
-                Book in minutes, not hours. Your time matters.
+                Book in 90 seconds, not 90 minutes. We know your time is valuable.
               </p>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Honesty</h3>
+            <div className="bg-white rounded-xl p-8 border border-slate-200 hover:border-brand-500 hover:shadow-lg transition-all">
+              <div className="text-5xl mb-4">💬</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Honesty</h3>
               <p className="text-slate-600">
-                Fixed prices, no surprises. We tell you what's happening.
+                Fixed prices, no surprises, no games. We tell you exactly what to expect.
               </p>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Trust</h3>
+            <div className="bg-white rounded-xl p-8 border border-slate-200 hover:border-brand-500 hover:shadow-lg transition-all">
+              <div className="text-5xl mb-4">🔒</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Trust</h3>
               <p className="text-slate-600">
-                Real cleaners, background checked. You know who's coming.
+                Real people, background checked, rated by customers. You know who's coming.
               </p>
             </div>
           </div>
@@ -64,67 +87,66 @@ export function About() {
       </section>
 
       {/* How It Works */}
-      <section className="py-16">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-slate-900 mb-12">The Tydl Way</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="w-12 h-12 bg-brand-600 text-white rounded-lg flex items-center justify-center font-bold text-xl mb-4">1</div>
-              <h3 className="font-bold text-slate-900 mb-2">Tell Us</h3>
-              <p className="text-slate-600 text-sm">What you need, when, and where.</p>
+      <section className="py-24">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-4xl font-bold text-slate-900 mb-16 text-center">The Tydl Way</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-gradient-to-b from-brand-50 to-white border border-brand-200 rounded-xl p-8 text-center">
+              <div className="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-2xl mb-4 mx-auto">1</div>
+              <h3 className="text-lg font-bold text-slate-900 mb-3">You Tell Us</h3>
+              <p className="text-slate-600 text-sm">Service type, date, property size. 2 minutes.</p>
             </div>
-            <div>
-              <div className="w-12 h-12 bg-brand-600 text-white rounded-lg flex items-center justify-center font-bold text-xl mb-4">2</div>
-              <h3 className="font-bold text-slate-900 mb-2">We Assign</h3>
-              <p className="text-slate-600 text-sm">Real cleaner with name, photo, rating.</p>
+            <div className="bg-gradient-to-b from-brand-50 to-white border border-brand-200 rounded-xl p-8 text-center">
+              <div className="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-2xl mb-4 mx-auto">2</div>
+              <h3 className="text-lg font-bold text-slate-900 mb-3">We Assign</h3>
+              <p className="text-slate-600 text-sm">Within 24h. Real name, photo, 4.9★ rating.</p>
             </div>
-            <div>
-              <div className="w-12 h-12 bg-brand-600 text-white rounded-lg flex items-center justify-center font-bold text-xl mb-4">3</div>
-              <h3 className="font-bold text-slate-900 mb-2">They Clean</h3>
-              <p className="text-slate-600 text-sm">Show up. Do the job. Do it well.</p>
+            <div className="bg-gradient-to-b from-brand-50 to-white border border-brand-200 rounded-xl p-8 text-center">
+              <div className="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-2xl mb-4 mx-auto">3</div>
+              <h3 className="text-lg font-bold text-slate-900 mb-3">They Clean</h3>
+              <p className="text-slate-600 text-sm">Show up on time. Do great work. Leave happy.</p>
             </div>
-            <div>
-              <div className="w-12 h-12 bg-brand-600 text-white rounded-lg flex items-center justify-center font-bold text-xl mb-4">4</div>
-              <h3 className="font-bold text-slate-900 mb-2">Rebook</h3>
-              <p className="text-slate-600 text-sm">One click. Same cleaner. Done.</p>
+            <div className="bg-gradient-to-b from-brand-50 to-white border border-brand-200 rounded-xl p-8 text-center">
+              <div className="w-16 h-16 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-2xl mb-4 mx-auto">4</div>
+              <h3 className="text-lg font-bold text-slate-900 mb-3">Rebook</h3>
+              <p className="text-slate-600 text-sm">One click. Same person. Same time. Repeat.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Trust & Safety */}
-      <section className="bg-slate-50 py-16">
+      <section className="bg-slate-50 py-24">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-slate-900 mb-12">We Take Safety Seriously</h2>
-          <div className="space-y-6">
-            <div className="flex gap-4">
-              <div className="text-3xl flex-shrink-0">✓</div>
-              <div>
-                <h3 className="font-bold text-slate-900 mb-1">Background Checked</h3>
-                <p className="text-slate-600">Every cleaner is vetted and verified before they step foot in your home.</p>
-              </div>
+          <h2 className="text-4xl font-bold text-slate-900 mb-16 text-center">We Take Safety & Trust Seriously</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-xl p-8 border border-slate-200 hover:shadow-lg transition-shadow">
+              <div className="text-5xl mb-4">✓</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Background Checked</h3>
+              <p className="text-slate-600">Every cleaner goes through thorough vetting before they step foot in your home. No exceptions.</p>
             </div>
-            <div className="flex gap-4">
-              <div className="text-3xl flex-shrink-0">🔒</div>
-              <div>
-                <h3 className="font-bold text-slate-900 mb-1">Your Data is Safe</h3>
-                <p className="text-slate-600">We protect your personal information with industry-standard encryption and security practices.</p>
-              </div>
+            <div className="bg-white rounded-xl p-8 border border-slate-200 hover:shadow-lg transition-shadow">
+              <div className="text-5xl mb-4">⭐</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Rated by Customers</h3>
+              <p className="text-slate-600">You see real ratings from real people. 4.9★ average. If someone drops below 4.5★, we have a conversation.</p>
             </div>
-            <div className="flex gap-4">
-              <div className="text-3xl flex-shrink-0">£</div>
-              <div>
-                <h3 className="font-bold text-slate-900 mb-1">Fair Pricing</h3>
-                <p className="text-slate-600">No surprises. Fixed price. Your cleaner gets paid fairly, you pay fairly.</p>
-              </div>
+            <div className="bg-white rounded-xl p-8 border border-slate-200 hover:shadow-lg transition-shadow">
+              <div className="text-5xl mb-4">🔒</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Your Data is Protected</h3>
+              <p className="text-slate-600">Industry-standard encryption. We don't sell your data. We don't share it. We protect it.</p>
             </div>
-            <div className="flex gap-4">
-              <div className="text-3xl flex-shrink-0">☎</div>
-              <div>
-                <h3 className="font-bold text-slate-900 mb-1">Real Support</h3>
-                <p className="text-slate-600">Call us. Email us. We're here to help, not to hide behind a chatbot.</p>
-              </div>
+            <div className="bg-white rounded-xl p-8 border border-slate-200 hover:shadow-lg transition-shadow">
+              <div className="text-5xl mb-4">💬</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Real Support</h3>
+              <p className="text-slate-600">Call us. Email us. Real people answer. We're here to help, not hide behind a chatbot.</p>
             </div>
+          </div>
+
+          <div className="mt-12 bg-gradient-to-r from-accent-50 to-orange-50 border border-accent-200 rounded-xl p-8 text-center">
+            <p className="text-slate-900 font-semibold mb-2">Our Guarantee</p>
+            <p className="text-slate-600">
+              If you're not satisfied with your clean, we'll redo it free or refund you. No questions. That's our promise.
+            </p>
           </div>
         </div>
       </section>
