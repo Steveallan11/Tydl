@@ -1,133 +1,108 @@
 import { Link } from 'react-router-dom';
-import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 
 export function Pricing() {
   return (
-    <main className="py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold text-slate-900 mb-4">Clear, Transparent Pricing</h1>
-        <p className="text-xl text-slate-600 mb-12">
-          No hidden fees. No surprises. Just honest pricing based on your property size.
-        </p>
-
-        {/* Base Pricing Table */}
-        <Card className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Regular Clean Pricing</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-200">
-                  <th className="text-left py-3 px-4 font-semibold text-slate-900">
-                    Property Size
-                  </th>
-                  <th className="text-right py-3 px-4 font-semibold text-slate-900">
-                    Price
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-3 px-4 text-slate-700">Studio</td>
-                  <td className="text-right py-3 px-4 text-slate-700 font-medium">
-                    £60
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-3 px-4 text-slate-700">1 Bedroom</td>
-                  <td className="text-right py-3 px-4 text-slate-700 font-medium">
-                    £75
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-3 px-4 text-slate-700">2 Bedrooms</td>
-                  <td className="text-right py-3 px-4 text-slate-700 font-medium">
-                    £90
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-3 px-4 text-slate-700">3 Bedrooms</td>
-                  <td className="text-right py-3 px-4 text-slate-700 font-medium">
-                    £105
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50">
-                  <td className="py-3 px-4 text-slate-700">4+ Bedrooms</td>
-                  <td className="text-right py-3 px-4 text-slate-700 font-medium">
-                    £120
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Add-ons */}
-        <Card className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Available Add-ons</h2>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="text-slate-700">Oven cleaning</span>
-              <span className="font-medium text-slate-900">+£25</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="text-slate-700">Fridge cleaning</span>
-              <span className="font-medium text-slate-900">+£20</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="text-slate-700">Interior windows</span>
-              <span className="font-medium text-slate-900">+£30</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-slate-100">
-              <span className="text-slate-700">Bed change</span>
-              <span className="font-medium text-slate-900">+£15</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-slate-700">Products pack</span>
-              <span className="font-medium text-slate-900">+£10</span>
-            </div>
-          </div>
-        </Card>
-
-        {/* Frequency Options */}
-        <Card className="mb-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Frequency Options</h2>
-          <p className="text-slate-600 mb-6">
-            Choose how often you'd like cleaning. Regular bookings help us build a routine with your cleaner.
+    <main className="bg-white">
+      {/* Header */}
+      <section className="bg-brand-50 py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <h1 className="text-4xl font-bold text-slate-900 mb-4">Transparent Pricing</h1>
+          <p className="text-lg text-slate-600">
+            No hidden fees. No surprises. Just honest pricing.
           </p>
-          <div className="space-y-3">
-            <div className="py-2 border-b border-slate-100">
-              <div className="font-medium text-slate-900">One-time booking</div>
-              <div className="text-sm text-slate-600">Pay full price for one clean</div>
-            </div>
-            <div className="py-2 border-b border-slate-100">
-              <div className="font-medium text-slate-900">Weekly</div>
-              <div className="text-sm text-slate-600">Same cleaner every week • Easy reschedule</div>
-            </div>
-            <div className="py-2 border-b border-slate-100">
-              <div className="font-medium text-slate-900">Biweekly</div>
-              <div className="text-sm text-slate-600">Every 2 weeks • Perfect for maintenance</div>
-            </div>
-            <div className="py-2">
-              <div className="font-medium text-slate-900">Monthly</div>
-              <div className="text-sm text-slate-600">Monthly deep cleans • Flexible scheduling</div>
-            </div>
-          </div>
-        </Card>
+        </div>
+      </section>
 
-        {/* CTA */}
-        <section className="bg-brand-50 rounded-lg p-8 text-center">
-          <h3 className="text-2xl font-bold text-slate-900 mb-4">
-            Ready to get your home clean?
-          </h3>
-          <p className="text-slate-600 mb-6">
-            Start your booking now. We'll calculate the exact price based on your needs.
+      {/* Base Pricing */}
+      <section className="py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-slate-900 mb-8">Regular Clean Pricing</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            {[
+              { size: 'Studio', price: '60' },
+              { size: '1 Bedroom', price: '75' },
+              { size: '2 Bedrooms', price: '90' },
+              { size: '3 Bedrooms', price: '105' },
+              { size: '4+ Bedrooms', price: '120' }
+            ].map((item) => (
+              <div key={item.size} className="border border-slate-200 rounded-lg p-6 hover:border-brand-500 transition-colors">
+                <div className="text-slate-600 text-sm mb-2">{item.size}</div>
+                <div className="text-4xl font-bold font-mono text-brand-600">£{item.price}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-12">
+            <p className="text-sm text-blue-900">
+              💡 <strong>Pro tip:</strong> Prices stay the same whether you book once, weekly, or monthly. No surprises.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Add-ons */}
+      <section className="bg-slate-50 py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-slate-900 mb-8">Add-ons</h2>
+          <p className="text-slate-600 mb-6">Make your clean even better. Pick and mix.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { name: 'Oven cleaning', price: '25' },
+              { name: 'Fridge cleaning', price: '20' },
+              { name: 'Interior windows', price: '30' },
+              { name: 'Bed change', price: '15' },
+              { name: 'Products pack', price: '10' },
+              { name: 'Full cleaning kit', price: '50' }
+            ].map((addon) => (
+              <div key={addon.name} className="bg-white border border-slate-200 rounded-lg p-4 flex justify-between items-center">
+                <span className="text-slate-900 font-medium">{addon.name}</span>
+                <span className="text-brand-600 font-mono font-semibold">+£{addon.price}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Frequency */}
+      <section className="py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <h2 className="text-2xl font-bold text-slate-900 mb-8">How Often?</h2>
+          <div className="space-y-4 mb-12">
+            {[
+              { name: 'One-time booking', desc: 'Single clean whenever you want' },
+              { name: 'Weekly', desc: 'Same day every week • Same cleaner • Easy reschedule' },
+              { name: 'Biweekly', desc: 'Every 2 weeks • Great for maintenance' },
+              { name: 'Monthly', desc: 'Once a month • Works for anyone' }
+            ].map((freq) => (
+              <div key={freq.name} className="border border-slate-200 rounded-lg p-6">
+                <div className="font-bold text-slate-900 mb-1">{freq.name}</div>
+                <div className="text-slate-600 text-sm">{freq.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-brand-50 rounded-lg p-8 text-center">
+            <p className="text-slate-600 mb-4">Same fixed price. Same high quality. Every time.</p>
+            <p className="text-sm text-slate-500">No discounts for frequent bookings. We treat every clean with the same care.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 bg-slate-50 text-center">
+        <div className="max-w-2xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">
+            See Your Exact Price
+          </h2>
+          <p className="text-lg text-slate-600 mb-8">
+            Tell us your property size and preferred add-ons. We'll show you the exact price before you book.
           </p>
           <Link to="/book/postcode">
-            <Button size="lg">Book Now</Button>
+            <Button size="lg">Start Booking</Button>
           </Link>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }

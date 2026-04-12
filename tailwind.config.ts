@@ -6,12 +6,20 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f7f8ff',
-          100: '#eceffe',
-          500: '#4f46e5',
-          600: '#4338ca',
-          700: '#3730a3'
+          50: '#eff6ff',
+          100: '#dbeafe',
+          500: '#2563eb',
+          600: '#1d4ed8',
+          700: '#1e40af'
+        },
+        accent: {
+          50: '#fffbeb',
+          500: '#f59e0b',
+          600: '#d97706'
         }
+      },
+      fontFamily: {
+        mono: ['IBM Plex Mono', 'monospace']
       }
     }
   },
