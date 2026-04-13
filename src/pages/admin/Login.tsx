@@ -87,6 +87,14 @@ export function AdminLogin() {
         <div className="mt-8 pt-6 border-t border-slate-200">
           <p className="text-xs text-slate-600 font-semibold mb-3">Test Credentials (MVP)</p>
           <div className="space-y-2 text-xs">
+            <div className="bg-slate-50 rounded p-3 font-mono border border-brand-200 bg-brand-50">
+              <p className="text-slate-700">
+                <span className="text-slate-500">Email:</span> Steveallan2018@gmail.com
+              </p>
+              <p className="text-slate-700">
+                <span className="text-slate-500">Password:</span> tydl2026
+              </p>
+            </div>
             <div className="bg-slate-50 rounded p-3 font-mono">
               <p className="text-slate-700">
                 <span className="text-slate-500">Email:</span> admin@tydl.com

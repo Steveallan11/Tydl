@@ -20,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TEST_ADMINS = [
   { id: 'admin-001', email: 'admin@tydl.com', password: 'tydl2026', role: 'admin' as const },
   { id: 'admin-002', email: 'support@tydl.com', password: 'support123', role: 'support' as const },
+  { id: 'admin-003', email: 'Steveallan2018@gmail.com', password: 'tydl2026', role: 'admin' as const },
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
