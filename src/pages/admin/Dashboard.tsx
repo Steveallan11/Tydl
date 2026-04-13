@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAdmin } from '../../context/AdminContext';
+import { useAuth } from '../../context/AuthContext';
 
 const StatCard = ({
   label,
@@ -45,6 +46,7 @@ const StatCard = ({
 
 export function AdminDashboard() {
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const { stats, bookings, cleaners, setStatusFilter } = useAdmin();
 
   // Get pending bookings
@@ -53,10 +55,25 @@ export function AdminDashboard() {
   return (
     <main className="bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
-          <p className="text-lg text-slate-600">Manage bookings and assign cleaners</p>
+        {/* Header with Logout */}
+        <div className="mb-12 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
+            <p className="text-lg text-slate-600">Manage bookings and assign cleaners</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-slate-600 mb-2">Logged in as <strong>{user?.email}</strong></p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                logout();
+                navigate('/admin/login');
+              }}
+            >
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Stats Grid */}

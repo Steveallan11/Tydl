@@ -3,6 +3,8 @@ import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { BookingProvider } from './context/BookingContext';
 import { AdminProvider } from './context/AdminContext';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Public pages
 import { Home } from './pages/public/Home';
@@ -27,6 +29,7 @@ import { MyBookings } from './pages/customer/MyBookings';
 import { Account } from './pages/customer/Account';
 
 // Admin pages
+import { AdminLogin } from './pages/admin/Login';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import { BookingBoard } from './pages/admin/BookingBoard';
 
@@ -37,11 +40,12 @@ import { JobsPortal } from './pages/cleaner/JobsPortal';
 export function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen bg-slate-50">
-        <Header />
-        <main className="flex-1">
-          <BookingProvider>
-            <Routes>
+      <AuthProvider>
+        <div className="flex flex-col min-h-screen bg-slate-50">
+          <Header />
+          <main className="flex-1">
+            <BookingProvider>
+              <Routes>
               {/* Public routes */}
               <Route path="/" element={<Home />} />
               <Route path="/services" element={<Services />} />
@@ -65,20 +69,25 @@ export function App() {
               <Route path="/customer/account" element={<Account />} />
 
               {/* Admin routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route
                 path="/admin/dashboard"
                 element={
-                  <AdminProvider>
-                    <AdminDashboard />
-                  </AdminProvider>
+                  <ProtectedRoute>
+                    <AdminProvider>
+                      <AdminDashboard />
+                    </AdminProvider>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/admin/board"
                 element={
-                  <AdminProvider>
-                    <BookingBoard />
-                  </AdminProvider>
+                  <ProtectedRoute>
+                    <AdminProvider>
+                      <BookingBoard />
+                    </AdminProvider>
+                  </ProtectedRoute>
                 }
               />
 
@@ -86,10 +95,11 @@ export function App() {
               <Route path="/cleaner/onboarding" element={<CleanerOnboarding />} />
               <Route path="/cleaner/jobs" element={<JobsPortal />} />
             </Routes>
-          </BookingProvider>
-        </main>
-        <Footer />
-      </div>
+            </BookingProvider>
+          </main>
+          <Footer />
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

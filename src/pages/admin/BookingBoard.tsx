@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAdmin } from '../../context/AdminContext';
+import { useAuth } from '../../context/AuthContext';
 import { Booking, BookingStatus } from '../../types/booking';
 
 type ColumnStatus = 'pending' | 'assigned' | 'in-progress' | 'completed';
@@ -114,6 +115,7 @@ const KanbanColumn = ({
 
 export function BookingBoard() {
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const { bookings, updateStatus, cleaners } = useAdmin();
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
   const [selectedCleaner, setSelectedCleaner] = useState<string | null>(null);
@@ -140,17 +142,32 @@ export function BookingBoard() {
     <main className="bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-4xl font-bold text-slate-900 mb-2">Booking Board</h1>
             <p className="text-lg text-slate-600">Manage booking workflow</p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => navigate('/admin/dashboard')}
-          >
-            ← Back to Dashboard
-          </Button>
+          <div className="flex gap-3">
+            <div className="text-right">
+              <p className="text-sm text-slate-600 mb-2">Logged in as <strong>{user?.email}</strong></p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  logout();
+                  navigate('/admin/login');
+                }}
+              >
+                Logout
+              </Button>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/admin/dashboard')}
+            >
+              ← Dashboard
+            </Button>
+          </div>
         </div>
 
         {/* Kanban Board */}
