@@ -25,7 +25,7 @@ export function Home() {
                 No calls. No emails. No games. Just trusted cleaners showing up to make your life easier.
               </p>
               <Link to="/book/postcode">
-                <Button size="lg" className="text-base px-8 py-3 bg-white text-brand-600 hover:bg-slate-100 font-bold">
+                <Button size="lg" className="!bg-white !text-brand-600 hover:!bg-slate-100">
                   Book Now
                 </Button>
               </Link>

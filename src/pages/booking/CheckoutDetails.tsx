@@ -34,6 +34,8 @@ export function CheckoutDetails() {
 
     try {
       await submitBooking();
+      // Navigate to confirmation after successful submission
+      navigate('/book/confirmation');
     } catch (error) {
       console.error('Booking submission failed:', error);
     }
