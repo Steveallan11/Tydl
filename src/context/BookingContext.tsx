@@ -95,6 +95,31 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       userBookings.push(newBookingId);
       localStorage.setItem('user:bookings', JSON.stringify(userBookings));
 
+      // Send confirmation email
+      if (formData.email && formData.firstName && formData.lastName) {
+        try {
+          await fetch('/api/send-confirmation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              bookingId: newBookingId,
+              email: formData.email,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              serviceType: formData.serviceType,
+              scheduledDate: formData.scheduledDate,
+              scheduledTime: formData.scheduledTime,
+              totalPrice: pricing.totalPrice,
+            }),
+          });
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+          // Don't block booking if email fails
+        }
+      }
+
       // Move to confirmation step
       setCurrentStep(9);
     } finally {
