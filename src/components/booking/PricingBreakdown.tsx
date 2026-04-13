@@ -70,7 +70,7 @@ export function PricingBreakdownComponent({ pricing, compact = false }: PricingB
       <div className="flex justify-between items-center bg-white rounded-lg p-4 border border-brand-200">
         <span className="text-lg font-bold text-slate-900">Total Price</span>
         <span className="text-3xl font-bold font-mono text-brand-600">
-          £{totalPrice}
+          £{Math.round(totalPrice)}
         </span>
       </div>
 

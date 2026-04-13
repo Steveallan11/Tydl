@@ -23,12 +23,14 @@ export function PriceSummary() {
             <span className="text-slate-700">Service</span>
             <span className="font-semibold text-slate-900">{pricing.details.baseService}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-slate-700">Date & Time</span>
-            <span className="font-semibold text-slate-900">
-              {formData.scheduledDate} at {formData.scheduledTime}
-            </span>
-          </div>
+          {formData.scheduledDate && formData.scheduledTime && (
+            <div className="flex justify-between">
+              <span className="text-slate-700">Date & Time</span>
+              <span className="font-semibold text-slate-900">
+                {formData.scheduledDate} at {formData.scheduledTime}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-slate-700">Supplies</span>
             <span className="font-semibold text-slate-900">
