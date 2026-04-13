@@ -99,6 +99,7 @@ export function FrequencyScheduling() {
             </label>
             <input
               type="date"
+              min={new Date().toISOString().split('T')[0]}
               value={formData.scheduledDate || ''}
               onChange={(e) => updateFormData({ scheduledDate: e.target.value })}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
