@@ -4,6 +4,7 @@ import { Footer } from './components/layout/Footer';
 import { BookingProvider } from './context/BookingContext';
 import { AdminProvider } from './context/AdminContext';
 import { AuthProvider } from './context/AuthContext';
+import { CustomerAuthProvider } from './context/CustomerAuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Public pages
@@ -24,6 +25,8 @@ import { CheckoutDetails } from './pages/booking/CheckoutDetails';
 import { ConfirmationPending } from './pages/booking/ConfirmationPending';
 
 // Customer pages
+import { CustomerLogin } from './pages/customer/Login';
+import { CustomerSignup } from './pages/customer/Signup';
 import { CustomerDashboard } from './pages/customer/Dashboard';
 import { MyBookings } from './pages/customer/MyBookings';
 import { Account } from './pages/customer/Account';
@@ -41,11 +44,12 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="flex flex-col min-h-screen bg-slate-50">
-          <Header />
-          <main className="flex-1">
-            <BookingProvider>
-              <Routes>
+        <CustomerAuthProvider>
+          <div className="flex flex-col min-h-screen bg-slate-50">
+            <Header />
+            <main className="flex-1">
+              <BookingProvider>
+                <Routes>
               {/* Public routes */}
               <Route path="/" element={<Home />} />
               <Route path="/services" element={<Services />} />
@@ -64,6 +68,8 @@ export function App() {
               <Route path="/book/confirmation" element={<ConfirmationPending />} />
 
               {/* Customer routes */}
+              <Route path="/customer/login" element={<CustomerLogin />} />
+              <Route path="/customer/signup" element={<CustomerSignup />} />
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/customer/bookings" element={<MyBookings />} />
               <Route path="/customer/account" element={<Account />} />
@@ -94,11 +100,12 @@ export function App() {
               {/* Cleaner routes */}
               <Route path="/cleaner/onboarding" element={<CleanerOnboarding />} />
               <Route path="/cleaner/jobs" element={<JobsPortal />} />
-            </Routes>
-            </BookingProvider>
-          </main>
-          <Footer />
-        </div>
+              </Routes>
+              </BookingProvider>
+            </main>
+            <Footer />
+          </div>
+        </CustomerAuthProvider>
       </AuthProvider>
     </BrowserRouter>
   );
