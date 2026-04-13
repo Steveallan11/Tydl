@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { BookingProvider } from './context/BookingContext';
+import { AdminProvider } from './context/AdminContext';
 
 // Public pages
 import { Home } from './pages/public/Home';
@@ -27,6 +28,7 @@ import { Account } from './pages/customer/Account';
 
 // Admin pages
 import { AdminDashboard } from './pages/admin/Dashboard';
+import { BookingBoard } from './pages/admin/BookingBoard';
 
 // Cleaner pages
 import { CleanerOnboarding } from './pages/cleaner/Onboarding';
@@ -63,7 +65,22 @@ export function App() {
               <Route path="/customer/account" element={<Account />} />
 
               {/* Admin routes */}
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminProvider>
+                    <AdminDashboard />
+                  </AdminProvider>
+                }
+              />
+              <Route
+                path="/admin/board"
+                element={
+                  <AdminProvider>
+                    <BookingBoard />
+                  </AdminProvider>
+                }
+              />
 
               {/* Cleaner routes */}
               <Route path="/cleaner/onboarding" element={<CleanerOnboarding />} />

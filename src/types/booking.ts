@@ -33,7 +33,7 @@ export type AddOn =
 
 export interface Booking {
   id: string;
-  customerId: string;
+  customerId?: string;
   status: BookingStatus;
   serviceType: ServiceType;
   propertySize: PropertySize;
@@ -45,6 +45,10 @@ export interface Booking {
   scheduledTime: string; // HH:mm
   assignedCleanerId?: string;
   customerNotes?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
   createdAt: string;
   updatedAt: string;
 }
