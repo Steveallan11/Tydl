@@ -3,6 +3,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { SERVICES } from '../../lib/constants';
 import { useEffect, useState } from 'react';
+import { ScrollIndicator, useIntersectionAnimation, AnimatedCounter } from '../../hooks/useInteractions';
 
 export function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -27,7 +28,7 @@ export function Home() {
         <div className="absolute bottom-10 left-20 w-80 h-80 bg-gradient-to-tr from-blue-400 to-brand-400 rounded-full opacity-15 blur-3xl animate-float" />
         <div className="absolute top-1/2 left-1/4 w-72 h-72 bg-gradient-to-br from-accent-300 to-accent-500 rounded-full opacity-10 blur-3xl" />
 
-        <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 relative z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="animate-fade-in-up">
               <div className="mb-8 inline-block">
@@ -122,6 +123,7 @@ export function Home() {
               </div>
             </div>
           </div>
+          <ScrollIndicator />
         </div>
       </section>
 
@@ -193,14 +195,16 @@ export function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { label: 'Homes Cleaned', value: '500+', icon: '🏠' },
-              { label: 'Average Rating', value: '4.9★', icon: '⭐' },
-              { label: 'Book in', value: '90s', icon: '⚡' },
-              { label: 'Assignment', value: '24h', icon: '🚀' }
+              { label: 'Homes Cleaned', count: 500, suffix: '+', icon: '🏠' },
+              { label: 'Average Rating', count: 4, suffix: '.9★', icon: '⭐' },
+              { label: 'Book in seconds', count: 90, suffix: 's', icon: '⚡' },
+              { label: 'Avg Assignment', count: 24, suffix: 'h', icon: '🚀' }
             ].map((stat, i) => (
-              <div key={i} className="text-center group animate-fade-in-up text-white" style={{animationDelay: `${i * 0.1}s`}}>
+              <div key={i} className="text-center group animate-fade-in-up text-white hover:scale-110 transition-transform duration-300" style={{animationDelay: `${i * 0.1}s`}}>
                 <div className="mb-4 text-5xl group-hover:scale-125 transition-transform duration-300">{stat.icon}</div>
-                <div className="text-4xl lg:text-5xl font-bold text-white mb-2">{stat.value}</div>
+                <div className="flex items-baseline justify-center gap-1 mb-2">
+                  <AnimatedCounter value={stat.count} suffix={stat.suffix} duration={2500} />
+                </div>
                 <div className="text-blue-100 text-sm lg:text-base font-medium">{stat.label}</div>
               </div>
             ))}
