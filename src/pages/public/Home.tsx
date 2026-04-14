@@ -3,6 +3,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { SERVICES } from '../../lib/constants';
 import { useEffect, useState } from 'react';
+import { ScrollIndicator, useIntersectionAnimation, AnimatedCounter } from '../../hooks/useInteractions';
 
 export function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -19,15 +20,24 @@ export function Home() {
     <main className="bg-white overflow-hidden">
       {/* Hero Section - Premium */}
       <section className="relative min-h-screen flex items-center justify-center pt-20 pb-20 overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-blue-50" />
+        {/* Hero Video Background */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+        >
+          <source src="/hero-background.mp4" type="video/mp4" />
+        </video>
 
-        {/* Animated Gradient Orbs */}
-        <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-brand-400 to-brand-600 rounded-full opacity-20 blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 left-20 w-80 h-80 bg-gradient-to-tr from-blue-400 to-brand-400 rounded-full opacity-15 blur-3xl animate-float" />
-        <div className="absolute top-1/2 left-1/4 w-72 h-72 bg-gradient-to-br from-accent-300 to-accent-500 rounded-full opacity-10 blur-3xl" />
+        {/* Dark Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/30 to-black/40" />
 
-        <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 relative z-10">
+        {/* Fallback Gradient (if video doesn't load) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-blue-50 opacity-0" />
+
+        <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 relative z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="animate-fade-in-up">
               <div className="mb-8 inline-block">
@@ -36,14 +46,14 @@ export function Home() {
                 </span>
               </div>
 
-              <h1 className="text-6xl lg:text-7xl font-bold text-slate-900 mb-8 leading-tight">
-                Get your home clean in <span className="bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent">minutes</span>
+              <h1 className="text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight">
+                Get your home clean in <span className="bg-gradient-to-r from-blue-300 to-blue-200 bg-clip-text text-transparent">minutes</span>
               </h1>
 
-              <p className="text-xl text-slate-600 mb-4 font-medium">
+              <p className="text-xl text-blue-100 mb-4 font-medium">
                 No phone calls. No emails. No games.
               </p>
-              <p className="text-lg text-slate-500 mb-12 leading-relaxed">
+              <p className="text-lg text-blue-50 mb-12 leading-relaxed">
                 Book a trusted local cleaner in 90 seconds. We assign your cleaner same day. You get their name, photo, and rating.
               </p>
 
@@ -55,18 +65,27 @@ export function Home() {
               </Link>
 
               {/* Trust Signals */}
-              <div className="space-y-4 pt-8 border-t border-slate-200">
-                <div className="flex items-center gap-3 text-slate-700 hover:text-brand-600 transition-colors">
-                  <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 font-bold">✓</div>
-                  <span className="font-semibold">500+ homes cleaned this month</span>
+              <div className="space-y-3 pt-8 border-t border-white/30 mt-4">
+                <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm px-4 py-3 rounded-lg hover:bg-white/25 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 group-hover:scale-110 transition-transform">✓</div>
+                  <div>
+                    <div className="font-bold text-white text-lg">500+</div>
+                    <div className="text-blue-100 text-sm">Homes cleaned this month</div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-slate-700 hover:text-brand-600 transition-colors">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold">⭐</div>
-                  <span className="font-semibold">4.9/5.0 average rating</span>
+                <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm px-4 py-3 rounded-lg hover:bg-white/25 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-yellow-400/40 rounded-full flex items-center justify-center text-yellow-200 font-bold text-lg flex-shrink-0 group-hover:scale-110 transition-transform">⭐</div>
+                  <div>
+                    <div className="font-bold text-white text-lg">4.9★</div>
+                    <div className="text-blue-100 text-sm">Average rating</div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-slate-700 hover:text-brand-600 transition-colors">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">⚡</div>
-                  <span className="font-semibold">90 seconds to book</span>
+                <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm px-4 py-3 rounded-lg hover:bg-white/25 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-cyan-400/40 rounded-full flex items-center justify-center text-cyan-200 font-bold text-lg flex-shrink-0 group-hover:scale-110 transition-transform">⚡</div>
+                  <div>
+                    <div className="font-bold text-white text-lg">90s</div>
+                    <div className="text-blue-100 text-sm">Book in seconds</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -122,6 +141,7 @@ export function Home() {
               </div>
             </div>
           </div>
+          <ScrollIndicator />
         </div>
       </section>
 
@@ -193,14 +213,16 @@ export function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { label: 'Homes Cleaned', value: '500+', icon: '🏠' },
-              { label: 'Average Rating', value: '4.9★', icon: '⭐' },
-              { label: 'Book in', value: '90s', icon: '⚡' },
-              { label: 'Assignment', value: '24h', icon: '🚀' }
+              { label: 'Homes Cleaned', count: 500, suffix: '+', icon: '🏠' },
+              { label: 'Average Rating', count: 4, suffix: '.9★', icon: '⭐' },
+              { label: 'Book in seconds', count: 90, suffix: 's', icon: '⚡' },
+              { label: 'Avg Assignment', count: 24, suffix: 'h', icon: '🚀' }
             ].map((stat, i) => (
-              <div key={i} className="text-center group animate-fade-in-up text-white" style={{animationDelay: `${i * 0.1}s`}}>
+              <div key={i} className="text-center group animate-fade-in-up text-white hover:scale-110 transition-transform duration-300" style={{animationDelay: `${i * 0.1}s`}}>
                 <div className="mb-4 text-5xl group-hover:scale-125 transition-transform duration-300">{stat.icon}</div>
-                <div className="text-4xl lg:text-5xl font-bold text-white mb-2">{stat.value}</div>
+                <div className="flex items-baseline justify-center gap-1 mb-2">
+                  <AnimatedCounter value={stat.count} suffix={stat.suffix} duration={2500} />
+                </div>
                 <div className="text-blue-100 text-sm lg:text-base font-medium">{stat.label}</div>
               </div>
             ))}
