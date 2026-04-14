@@ -5,6 +5,7 @@ import { BookingProvider } from './context/BookingContext';
 import { AdminProvider } from './context/AdminContext';
 import { AuthProvider } from './context/AuthContext';
 import { CustomerAuthProvider } from './context/CustomerAuthContext';
+import { CleanerAuthProvider } from './context/CleanerAuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Public pages
@@ -39,72 +40,77 @@ import { BookingBoard } from './pages/admin/BookingBoard';
 // Cleaner pages
 import { CleanerOnboarding } from './pages/cleaner/Onboarding';
 import { JobsPortal } from './pages/cleaner/JobsPortal';
+import { CleanerProfile } from './pages/cleaner/Profile';
 
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <CustomerAuthProvider>
-          <div className="flex flex-col min-h-screen bg-slate-50">
-            <Header />
-            <main className="flex-1">
-              <BookingProvider>
-                <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/about" element={<About />} />
+          <CleanerAuthProvider>
+            <div className="flex flex-col min-h-screen bg-slate-50">
+              <Header />
+              <main className="flex-1">
+                <BookingProvider>
+                  <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/services" element={<Services />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/about" element={<About />} />
 
-              {/* Booking flow routes */}
-              <Route path="/book/postcode" element={<Postcode />} />
-              <Route path="/book/service" element={<ServiceSelection />} />
-              <Route path="/book/property" element={<PropertyDetails />} />
-              <Route path="/book/supplies" element={<SuppliesOption />} />
-              <Route path="/book/frequency" element={<FrequencyScheduling />} />
-              <Route path="/book/addons" element={<AddOns />} />
-              <Route path="/book/summary" element={<PriceSummary />} />
-              <Route path="/book/checkout" element={<CheckoutDetails />} />
-              <Route path="/book/confirmation" element={<ConfirmationPending />} />
+                {/* Booking flow routes */}
+                <Route path="/book/postcode" element={<Postcode />} />
+                <Route path="/book/service" element={<ServiceSelection />} />
+                <Route path="/book/property" element={<PropertyDetails />} />
+                <Route path="/book/supplies" element={<SuppliesOption />} />
+                <Route path="/book/frequency" element={<FrequencyScheduling />} />
+                <Route path="/book/addons" element={<AddOns />} />
+                <Route path="/book/summary" element={<PriceSummary />} />
+                <Route path="/book/checkout" element={<CheckoutDetails />} />
+                <Route path="/book/confirmation" element={<ConfirmationPending />} />
 
-              {/* Customer routes */}
-              <Route path="/customer/login" element={<CustomerLogin />} />
-              <Route path="/customer/signup" element={<CustomerSignup />} />
-              <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-              <Route path="/customer/bookings" element={<MyBookings />} />
-              <Route path="/customer/account" element={<Account />} />
+                {/* Customer routes */}
+                <Route path="/customer/login" element={<CustomerLogin />} />
+                <Route path="/customer/signup" element={<CustomerSignup />} />
+                <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+                <Route path="/customer/bookings" element={<MyBookings />} />
+                <Route path="/customer/account" element={<Account />} />
 
-              {/* Admin routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <AdminProvider>
-                      <AdminDashboard />
-                    </AdminProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/board"
-                element={
-                  <ProtectedRoute>
-                    <AdminProvider>
-                      <BookingBoard />
-                    </AdminProvider>
-                  </ProtectedRoute>
-                }
-              />
+                {/* Admin routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route
+                  path="/admin/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <AdminProvider>
+                        <AdminDashboard />
+                      </AdminProvider>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/board"
+                  element={
+                    <ProtectedRoute>
+                      <AdminProvider>
+                        <BookingBoard />
+                      </AdminProvider>
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Cleaner routes */}
-              <Route path="/cleaner/onboarding" element={<CleanerOnboarding />} />
-              <Route path="/cleaner/jobs" element={<JobsPortal />} />
-              </Routes>
-              </BookingProvider>
-            </main>
-            <Footer />
-          </div>
+                {/* Cleaner routes */}
+                <Route path="/cleaner/login" element={<CleanerOnboarding />} />
+                <Route path="/cleaner/signup" element={<CleanerOnboarding />} />
+                <Route path="/cleaner/jobs" element={<JobsPortal />} />
+                <Route path="/cleaner/profile" element={<CleanerProfile />} />
+                  </Routes>
+                </BookingProvider>
+              </main>
+              <Footer />
+            </div>
+          </CleanerAuthProvider>
         </CustomerAuthProvider>
       </AuthProvider>
     </BrowserRouter>
