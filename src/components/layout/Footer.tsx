@@ -6,14 +6,11 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="group">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-brand-600 to-brand-700 rounded-lg flex items-center justify-center text-white font-bold shadow-lg group-hover:shadow-brand-600/50 group-hover:scale-110 transition-all duration-300">
-                T
-              </div>
-              <span className="font-bold bg-gradient-to-r from-brand-400 to-blue-400 bg-clip-text text-transparent text-lg">
-                Tydl
-              </span>
-            </div>
+            <img
+              src="/logo.png"
+              alt="Tydl"
+              className="h-14 w-auto object-contain mb-4 group-hover:scale-105 transition-transform duration-300"
+            />
             <p className="text-sm text-slate-400 leading-relaxed">
               Fast, trusted cleaning for busy people in Northamptonshire.
             </p>
