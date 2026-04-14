@@ -1,15 +1,24 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { useBooking } from '../../context/BookingContext';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { validatePostcode } from '../../lib/validation';
 
 export function Postcode() {
   const navigate = useNavigate();
   const { formData, updateFormData } = useBooking();
+  const { customer } = useCustomerAuth();
   const [error, setError] = useState<string | null>(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!customer) {
+      navigate('/customer/signup', { replace: true });
+    }
+  }, [customer, navigate]);
 
   const handlePostcodeChange = (value: string) => {
     updateFormData({ postcode: value });
