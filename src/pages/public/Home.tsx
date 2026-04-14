@@ -20,13 +20,22 @@ export function Home() {
     <main className="bg-white overflow-hidden">
       {/* Hero Section - Premium */}
       <section className="relative min-h-screen flex items-center justify-center pt-20 pb-20 overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-blue-50" />
+        {/* Hero Video Background */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+        >
+          <source src="/hero-background.mp4" type="video/mp4" />
+        </video>
 
-        {/* Animated Gradient Orbs */}
-        <div className="absolute top-20 right-10 w-96 h-96 bg-gradient-to-br from-brand-400 to-brand-600 rounded-full opacity-20 blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 left-20 w-80 h-80 bg-gradient-to-tr from-blue-400 to-brand-400 rounded-full opacity-15 blur-3xl animate-float" />
-        <div className="absolute top-1/2 left-1/4 w-72 h-72 bg-gradient-to-br from-accent-300 to-accent-500 rounded-full opacity-10 blur-3xl" />
+        {/* Dark Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/30 to-black/40" />
+
+        {/* Fallback Gradient (if video doesn't load) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-blue-50 opacity-0" />
 
         <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 relative z-10 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -37,14 +46,14 @@ export function Home() {
                 </span>
               </div>
 
-              <h1 className="text-6xl lg:text-7xl font-bold text-slate-900 mb-8 leading-tight">
-                Get your home clean in <span className="bg-gradient-to-r from-brand-600 to-blue-600 bg-clip-text text-transparent">minutes</span>
+              <h1 className="text-6xl lg:text-7xl font-bold text-white mb-8 leading-tight">
+                Get your home clean in <span className="bg-gradient-to-r from-blue-300 to-blue-200 bg-clip-text text-transparent">minutes</span>
               </h1>
 
-              <p className="text-xl text-slate-600 mb-4 font-medium">
+              <p className="text-xl text-blue-100 mb-4 font-medium">
                 No phone calls. No emails. No games.
               </p>
-              <p className="text-lg text-slate-500 mb-12 leading-relaxed">
+              <p className="text-lg text-blue-50 mb-12 leading-relaxed">
                 Book a trusted local cleaner in 90 seconds. We assign your cleaner same day. You get their name, photo, and rating.
               </p>
 
@@ -56,17 +65,17 @@ export function Home() {
               </Link>
 
               {/* Trust Signals */}
-              <div className="space-y-4 pt-8 border-t border-slate-200">
-                <div className="flex items-center gap-3 text-slate-700 hover:text-brand-600 transition-colors">
-                  <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 font-bold">✓</div>
+              <div className="space-y-4 pt-8 border-t border-white/20">
+                <div className="flex items-center gap-3 text-white hover:text-blue-200 transition-colors">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold">✓</div>
                   <span className="font-semibold">500+ homes cleaned this month</span>
                 </div>
-                <div className="flex items-center gap-3 text-slate-700 hover:text-brand-600 transition-colors">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold">⭐</div>
+                <div className="flex items-center gap-3 text-white hover:text-blue-200 transition-colors">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-yellow-300 font-bold">⭐</div>
                   <span className="font-semibold">4.9/5.0 average rating</span>
                 </div>
-                <div className="flex items-center gap-3 text-slate-700 hover:text-brand-600 transition-colors">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">⚡</div>
+                <div className="flex items-center gap-3 text-white hover:text-blue-200 transition-colors">
+                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-blue-200 font-bold">⚡</div>
                   <span className="font-semibold">90 seconds to book</span>
                 </div>
               </div>
