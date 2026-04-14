@@ -5,13 +5,12 @@ export function Header() {
     <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/30 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-brand-600 to-brand-700 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
-              T
-            </div>
-            <span className="font-bold bg-gradient-to-r from-brand-600 to-brand-700 bg-clip-text text-transparent text-lg hidden sm:inline">
-              Tydl
-            </span>
+          <Link to="/" className="flex items-center group">
+            <img
+              src="/logo.png"
+              alt="Tydl"
+              className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+            />
           </Link>
 
           <nav className="hidden md:flex gap-8">
