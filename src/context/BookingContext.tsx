@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { BookingFormData } from '../types/booking';
 import { calculatePricing, PricingBreakdown } from '../lib/pricing';
+import { createBooking, getCurrentCustomer } from '../lib/supabase';
 
 interface BookingContextType {
   // Form data
@@ -74,26 +75,27 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const submitBooking = async () => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Get current customer
+      const currentCustomer = await getCurrentCustomer();
+      if (!currentCustomer?.customer?.id) {
+        throw new Error('No customer logged in');
+      }
 
-      // Generate booking ID
-      const newBookingId = `BK-${Date.now()}`;
-      setBookingId(newBookingId);
+      // Create booking in database
+      const booking = await createBooking({
+        customer_id: currentCustomer.customer.id,
+        service_type: formData.serviceType!,
+        property_size: formData.propertySize!,
+        supplies: formData.supplies || 'platform',
+        frequency: formData.frequency || 'once',
+        add_ons: formData.addOns || [],
+        total_price: pricing.totalPrice,
+        scheduled_date: formData.scheduledDate!,
+        scheduled_time: formData.scheduledTime!,
+        customer_notes: formData.customerNotes,
+      });
 
-      // Save to localStorage
-      const booking = {
-        id: newBookingId,
-        ...formData,
-        totalPrice: pricing.totalPrice,
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem(`booking:${newBookingId}`, JSON.stringify(booking));
-
-      // Also save to user's bookings list
-      const userBookings = JSON.parse(localStorage.getItem('user:bookings') || '[]');
-      userBookings.push(newBookingId);
-      localStorage.setItem('user:bookings', JSON.stringify(userBookings));
+      setBookingId(booking.id);
 
       // Send confirmation email
       if (formData.email && formData.firstName && formData.lastName) {
@@ -104,7 +106,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              bookingId: newBookingId,
+              bookingId: booking.id,
               email: formData.email,
               firstName: formData.firstName,
               lastName: formData.lastName,
