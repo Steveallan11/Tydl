@@ -1,15 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+let supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('[Supabase Init] Raw URL:', supabaseUrl);
+console.log('[Supabase Init] Raw URL type:', typeof supabaseUrl);
+console.log('[Supabase Init] Raw URL length:', supabaseUrl?.length);
+
+// Clean the URL if it has extra formatting
+if (supabaseUrl && typeof supabaseUrl === 'string') {
+  supabaseUrl = supabaseUrl.trim().replace(/^[<"]|[>"]$/g, '');
+}
+
+console.log('[Supabase Init] Cleaned URL:', supabaseUrl);
 console.log('[Supabase Init] URL exists:', !!supabaseUrl);
 console.log('[Supabase Init] Key exists:', !!supabaseAnonKey);
-console.log('[Supabase Init] Environment:', {
-  url: supabaseUrl?.substring(0, 30) + '...',
-  hasKey: !!supabaseAnonKey
-});
 
 if (!supabaseUrl || !supabaseAnonKey) {
   const error = new Error(`Missing Supabase environment variables. URL: ${!!supabaseUrl}, Key: ${!!supabaseAnonKey}`);
@@ -17,8 +23,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw error;
 }
 
-console.log('[Supabase Init] Success! Client created');
+console.log('[Supabase Init] Creating client with URL:', supabaseUrl);
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+console.log('[Supabase Init] Client created successfully!');
 
 // ============================================================================
 // CUSTOMER AUTHENTICATION & PROFILE
