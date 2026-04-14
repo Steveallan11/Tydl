@@ -9,9 +9,10 @@ import {
 
 interface CustomerAuthContextType {
   user: User | null;
+  customer: any;
   isLoggedIn: boolean;
   isLoading: boolean;
-  signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+  signup: (email: string, password: string, firstName: string, lastName: string, postcode: string, phone: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
@@ -22,6 +23,7 @@ const CustomerAuthContext = createContext<CustomerAuthContextType | undefined>(u
 
 export function CustomerAuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [customer, setCustomer] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +32,10 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     const checkUser = async () => {
       try {
         const currentUser = await getCurrentCustomer();
-        setUser(currentUser || null);
+        if (currentUser) {
+          setUser(currentUser.user);
+          setCustomer(currentUser.customer);
+        }
       } catch (err) {
         console.error('Failed to get current user:', err);
       } finally {
@@ -41,12 +46,12 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     checkUser();
   }, []);
 
-  const signup = async (email: string, password: string, firstName: string, lastName: string) => {
+  const signup = async (email: string, password: string, firstName: string, lastName: string, postcode: string, phone: string) => {
     try {
       setError(null);
-      await signUpCustomer(email, password, firstName, lastName);
-      const currentUser = await getCurrentCustomer();
-      setUser(currentUser);
+      const result = await signUpCustomer(email, password, firstName, lastName, postcode, phone);
+      setUser(result.user);
+      setCustomer(result.customer);
     } catch (err: any) {
       setError(err.message || 'Failed to sign up');
       throw err;
@@ -56,8 +61,9 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
   const login = async (email: string, password: string) => {
     try {
       setError(null);
-      const { user: loginUser } = await signInCustomer(email, password);
-      setUser(loginUser);
+      const result = await signInCustomer(email, password);
+      setUser(result.user);
+      setCustomer(result.customer);
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
       throw err;
@@ -69,6 +75,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
       setError(null);
       await signOutCustomer();
       setUser(null);
+      setCustomer(null);
     } catch (err: any) {
       setError(err.message || 'Failed to sign out');
       throw err;
@@ -79,6 +86,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
 
   const value: CustomerAuthContextType = {
     user,
+    customer,
     isLoggedIn: user !== null,
     isLoading,
     signup,

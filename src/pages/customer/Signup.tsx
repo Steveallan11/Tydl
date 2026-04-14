@@ -10,6 +10,8 @@ export function CustomerSignup() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [postcode, setPostcode] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +24,9 @@ export function CustomerSignup() {
     if (!lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!email.trim()) newErrors.email = 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Invalid email format';
+    if (!phone.trim()) newErrors.phone = 'Phone number is required';
+    if (!/^[\d\s\-\+\(\)]{10,}$/.test(phone)) newErrors.phone = 'Invalid phone number';
+    if (!postcode.trim()) newErrors.postcode = 'Postcode is required';
     if (!password) newErrors.password = 'Password is required';
     if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
@@ -39,7 +44,7 @@ export function CustomerSignup() {
     setIsLoading(true);
 
     try {
-      await signup(email, password, firstName, lastName);
+      await signup(email, password, firstName, lastName, postcode, phone);
       navigate('/customer/dashboard');
     } catch (err) {
       console.error('Signup failed:', err);
@@ -110,6 +115,40 @@ export function CustomerSignup() {
               placeholder="you@example.com"
             />
             {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
+                errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-300'
+              }`}
+              placeholder="07700 123456"
+            />
+            {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
+          </div>
+
+          {/* Postcode */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Service Area Postcode
+            </label>
+            <input
+              type="text"
+              value={postcode}
+              onChange={(e) => setPostcode(e.target.value.toUpperCase())}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
+                errors.postcode ? 'border-red-500 bg-red-50' : 'border-slate-300'
+              }`}
+              placeholder="NN1"
+            />
+            {errors.postcode && <p className="text-xs text-red-600 mt-1">{errors.postcode}</p>}
           </div>
 
           {/* Password */}
