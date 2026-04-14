@@ -4,10 +4,20 @@ import type { User } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('[Supabase Init] URL exists:', !!supabaseUrl);
+console.log('[Supabase Init] Key exists:', !!supabaseAnonKey);
+console.log('[Supabase Init] Environment:', {
+  url: supabaseUrl?.substring(0, 30) + '...',
+  hasKey: !!supabaseAnonKey
+});
+
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  const error = new Error(`Missing Supabase environment variables. URL: ${!!supabaseUrl}, Key: ${!!supabaseAnonKey}`);
+  console.error('[Supabase Init] Error:', error);
+  throw error;
 }
 
+console.log('[Supabase Init] Success! Client created');
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ============================================================================
