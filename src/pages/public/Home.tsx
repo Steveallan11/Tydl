@@ -65,18 +65,27 @@ export function Home() {
               </Link>
 
               {/* Trust Signals */}
-              <div className="space-y-4 pt-8 border-t border-white/20">
-                <div className="flex items-center gap-3 text-white hover:text-blue-200 transition-colors">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white font-bold">✓</div>
-                  <span className="font-semibold">500+ homes cleaned this month</span>
+              <div className="space-y-3 pt-8 border-t border-white/30 mt-4">
+                <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm px-4 py-3 rounded-lg hover:bg-white/25 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 group-hover:scale-110 transition-transform">✓</div>
+                  <div>
+                    <div className="font-bold text-white text-lg">500+</div>
+                    <div className="text-blue-100 text-sm">Homes cleaned this month</div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-white hover:text-blue-200 transition-colors">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-yellow-300 font-bold">⭐</div>
-                  <span className="font-semibold">4.9/5.0 average rating</span>
+                <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm px-4 py-3 rounded-lg hover:bg-white/25 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-yellow-400/40 rounded-full flex items-center justify-center text-yellow-200 font-bold text-lg flex-shrink-0 group-hover:scale-110 transition-transform">⭐</div>
+                  <div>
+                    <div className="font-bold text-white text-lg">4.9★</div>
+                    <div className="text-blue-100 text-sm">Average rating</div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-white hover:text-blue-200 transition-colors">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-blue-200 font-bold">⚡</div>
-                  <span className="font-semibold">90 seconds to book</span>
+                <div className="flex items-center gap-3 bg-white/15 backdrop-blur-sm px-4 py-3 rounded-lg hover:bg-white/25 transition-all duration-300 group">
+                  <div className="w-12 h-12 bg-cyan-400/40 rounded-full flex items-center justify-center text-cyan-200 font-bold text-lg flex-shrink-0 group-hover:scale-110 transition-transform">⚡</div>
+                  <div>
+                    <div className="font-bold text-white text-lg">90s</div>
+                    <div className="text-blue-100 text-sm">Book in seconds</div>
+                  </div>
                 </div>
               </div>
             </div>
