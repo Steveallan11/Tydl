@@ -330,6 +330,7 @@ export async function createBooking(bookingData: {
   scheduled_date: string;
   scheduled_time: string;
   customer_notes?: string;
+  needs_before_after_images?: boolean;
 }) {
   const { data, error } = await supabase
     .from('bookings')
@@ -347,19 +348,28 @@ export async function createBooking(bookingData: {
 }
 
 export async function getBookings() {
-  const { data, error } = await supabase
-    .from('bookings')
-    .select(
-      `
-      *,
-      customer:customers(id, first_name, last_name, email, phone),
-      cleaner:cleaners(id, first_name, last_name, email)
-      `
-    )
-    .order('created_at', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(
+        `
+        *,
+        customer:customers(id, first_name, last_name, email, phone),
+        cleaner:cleaners(id, first_name, last_name, email)
+        `
+      )
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('[getBookings] Supabase error:', error);
+      throw error;
+    }
+    console.log('[getBookings] Retrieved', data?.length || 0, 'bookings');
+    return data || [];
+  } catch (error: any) {
+    console.error('[getBookings] Error fetching bookings:', error);
+    throw error;
+  }
 }
 
 export async function getCustomerBookings(customerId: string) {
@@ -448,14 +458,28 @@ export async function assignCleanerToBooking(
 // ============================================================================
 
 export async function getCleaners(verification_status = 'verified') {
-  const { data, error } = await supabase
-    .from('cleaners')
-    .select('*')
-    .eq('verification_status', verification_status)
-    .order('rating', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('cleaners')
+      .select('*')
+      .eq('verification_status', verification_status)
+      .order('rating', { ascending: false });
 
-  if (error) throw error;
-  return data;
+    // If permission denied (406), return empty array instead of throwing
+    if (error) {
+      // Check for permission denied errors (406 or PGRST116)
+      if (error.code === '406' || error.message?.includes('406') || error.message?.includes('permission')) {
+        console.warn('[getCleaners] Permission denied - user may not be admin');
+        return [];
+      }
+      throw error;
+    }
+    return data || [];
+  } catch (error: any) {
+    console.error('Error getting cleaners:', error);
+    // Return empty array on error instead of throwing to prevent page crash
+    return [];
+  }
 }
 
 export async function getCleanerById(cleanerId: string) {
@@ -463,6 +487,28 @@ export async function getCleanerById(cleanerId: string) {
     .from('cleaners')
     .select('*')
     .eq('id', cleanerId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createCleanerAdmin(cleanerData: {
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  postcode: string;
+}) {
+  const { data, error } = await supabase
+    .from('cleaners')
+    .insert([
+      {
+        ...cleanerData,
+        verification_status: 'pending',
+      },
+    ])
+    .select()
     .single();
 
   if (error) throw error;

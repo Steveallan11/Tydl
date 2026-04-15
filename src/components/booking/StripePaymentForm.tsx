@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../common/Button';
-import { getStripe } from '../../lib/stripe';
+import { getStripe, createPaymentIntent } from '../../lib/stripe';
+import { Stripe as StripeType } from '@stripe/stripe-js';
+import { supabase } from '../../lib/supabase';
 
 interface StripePaymentFormProps {
   amount: number;
   bookingId: string;
+  customerId?: string;
+  customerEmail?: string;
   onSuccess: (paymentIntentId: string) => void;
   onError: (error: string) => void;
   isProcessing?: boolean;
@@ -12,20 +16,26 @@ interface StripePaymentFormProps {
 
 /**
  * Stripe Payment Form Component
- * Handles card payment collection using Stripe Elements
+ * Handles card payment collection and confirmation
  */
 export function StripePaymentForm({
   amount,
   bookingId,
+  customerId,
+  customerEmail,
   onSuccess,
   onError,
   isProcessing = false,
 }: StripePaymentFormProps) {
-  const [stripe, setStripe] = useState<any>(null);
-  const [cardElement, setCardElement] = useState<any>(null);
+  const [stripe, setStripe] = useState<StripeType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cardError, setCardError] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+  const [supabaseUrl, setSupabaseUrl] = useState('');
 
   // Initialize Stripe
   useEffect(() => {
@@ -40,6 +50,30 @@ export function StripePaymentForm({
         }
 
         setStripe(stripeInstance);
+
+        // Get Supabase URL from env
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        if (url) {
+          setSupabaseUrl(url);
+        }
+
+        // Create payment intent
+        console.log('[StripePaymentForm] Creating payment intent for booking:', bookingId);
+        const result = await createPaymentIntent(
+          bookingId,
+          customerId || 'unknown',
+          amount / 100, // Convert from pence to pounds
+          `Cleaning Service - Booking ${bookingId}`,
+          customerEmail
+        );
+
+        if (result.success && result.clientSecret) {
+          setClientSecret(result.clientSecret);
+          console.log('[StripePaymentForm] Client secret obtained:', result.paymentIntentId);
+        } else {
+          throw new Error(result.error || 'Failed to create payment intent');
+        }
+
         setIsLoading(false);
       } catch (err: any) {
         console.error('[StripePaymentForm] Initialization error:', err);
@@ -49,38 +83,110 @@ export function StripePaymentForm({
     };
 
     initializeStripe();
-  }, []);
+  }, [bookingId, customerId, customerEmail, amount]);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe) {
-      setError('Stripe is not initialized');
+    if (!clientSecret) {
+      setCardError('Stripe is not initialized. Please refresh and try again.');
       return;
     }
 
     setCardError(null);
+    setIsLoading(true);
 
-    // For MVP: Simulate payment processing
-    // In production, this would use actual Stripe payment intent and confirmCardPayment
     try {
-      // Simulate payment delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('[StripePaymentForm] Confirming payment for:', bookingId);
 
-      // For testing purposes, accept the payment
-      // In production, this would confirm the actual Stripe payment
-      onSuccess(`test_payment_${bookingId}_${Date.now()}`);
+      // Validate card inputs
+      const cleanCardNumber = cardNumber.replace(/\s/g, '');
+      if (!cleanCardNumber || cleanCardNumber.length < 13 || cleanCardNumber.length > 19) {
+        throw new Error('Card number must be 13-19 digits');
+      }
+      if (!cleanCardNumber.match(/^\d+$/)) {
+        throw new Error('Card number must contain only numbers');
+      }
+
+      if (!expiry || !expiry.includes('/')) {
+        throw new Error('Please enter expiry date in MM/YY format');
+      }
+
+      const expiryParts = expiry.split('/');
+      if (expiryParts.length !== 2) {
+        throw new Error('Expiry date must be in MM/YY format');
+      }
+
+      const expMonth = parseInt(expiryParts[0]);
+      if (isNaN(expMonth) || expMonth < 1 || expMonth > 12) {
+        throw new Error('Expiry month must be between 01 and 12');
+      }
+
+      const expYearStr = expiryParts[1];
+      if (!expYearStr || expYearStr.length !== 2 || !expYearStr.match(/^\d+$/)) {
+        throw new Error('Expiry year must be 2 digits (YY)');
+      }
+
+      const expYear = 2000 + parseInt(expYearStr);
+      if (isNaN(expYear) || expYear < new Date().getFullYear()) {
+        throw new Error('Card has expired');
+      }
+
+      if (!cvc || cvc.length < 3 || cvc.length > 4) {
+        throw new Error('CVC must be 3-4 digits');
+      }
+      if (!cvc.match(/^\d+$/)) {
+        throw new Error('CVC must contain only numbers');
+      }
+
+      // Call server-side function to confirm payment
+      const session = await supabase.auth.getSession();
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/confirm-payment`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data.session?.access_token || ''}`,
+          },
+          body: JSON.stringify({
+            clientSecret,
+            cardNumber: cleanCardNumber,
+            expMonth,
+            expYear,
+            cvc,
+            email: customerEmail,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Payment failed');
+      }
+
+      if (result.succeeded) {
+        console.log('[StripePaymentForm] Payment succeeded:', result.paymentIntentId);
+        onSuccess(result.paymentIntentId);
+      } else {
+        setCardError(`Payment status: ${result.status}. Please try again.`);
+        onError(`Payment status: ${result.status}`);
+      }
     } catch (err: any) {
       const message = err.message || 'Payment failed. Please try again.';
+      console.error('[StripePaymentForm] Payment error:', err);
       setCardError(message);
       onError(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !clientSecret) {
     return (
       <div className="bg-slate-50 rounded-lg p-6 text-center">
-        <p className="text-slate-600">Loading payment form...</p>
+        <p className="text-slate-600">Setting up secure payment...</p>
       </div>
     );
   }
@@ -93,6 +199,20 @@ export function StripePaymentForm({
     );
   }
 
+  // Format card number with spaces
+  const formatCardNumber = (value: string) => {
+    return value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
+  };
+
+  // Format expiry MM/YY
+  const formatExpiry = (value: string) => {
+    const cleaned = value.replace(/\D/g, '').slice(0, 4);
+    if (cleaned.length >= 2) {
+      return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
+    }
+    return cleaned;
+  };
+
   return (
     <form onSubmit={handlePayment} className="space-y-6">
       {/* Card Information */}
@@ -101,31 +221,29 @@ export function StripePaymentForm({
 
         {/* Card Details - Test Mode Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900 mb-3 font-medium">🔒 Testing Mode - Use Test Card</p>
+          <p className="text-sm text-blue-900 mb-3 font-medium">🔒 Secure Test Payment</p>
           <div className="space-y-2 text-xs text-blue-800">
-            <p><strong>Card Number:</strong> 4242 4242 4242 4242</p>
-            <p><strong>Exp Date:</strong> Any future date (e.g., 12/25)</p>
+            <p><strong>Test Card:</strong> 4242 4242 4242 4242</p>
+            <p><strong>Exp Date:</strong> Any future date (e.g., 12/26)</p>
             <p><strong>CVC:</strong> Any 3 digits (e.g., 123)</p>
-            <p className="mt-2 italic">This is a Stripe test card for development.</p>
+            <p className="mt-2 italic">This Stripe test card will not charge your actual card.</p>
           </div>
         </div>
 
-        {/* Card Number Input (Mock) */}
+        {/* Card Number Input */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
             Card Number
           </label>
-          <div className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-white">
-            <input
-              type="text"
-              placeholder="4242 4242 4242 4242"
-              maxLength={19}
-              className="w-full outline-none text-slate-900"
-              defaultValue="4242 4242 4242 4242"
-              readOnly
-            />
-          </div>
-          <p className="text-xs text-slate-500 mt-1">Stripe will handle card tokenization securely</p>
+          <input
+            type="text"
+            placeholder="4242 4242 4242 4242"
+            maxLength={19}
+            value={cardNumber}
+            onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
+            disabled={isLoading || isProcessing}
+          />
         </div>
 
         {/* Expiry and CVC */}
@@ -138,7 +256,10 @@ export function StripePaymentForm({
               type="text"
               placeholder="MM/YY"
               maxLength={5}
+              value={expiry}
+              onChange={(e) => setExpiry(formatExpiry(e.target.value))}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
+              disabled={isLoading || isProcessing}
             />
           </div>
           <div>
@@ -149,7 +270,10 @@ export function StripePaymentForm({
               type="text"
               placeholder="123"
               maxLength={3}
+              value={cvc}
+              onChange={(e) => setCvc(e.target.value.replace(/\D/g, ''))}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
+              disabled={isLoading || isProcessing}
             />
           </div>
         </div>
@@ -172,10 +296,10 @@ export function StripePaymentForm({
       {/* Payment Button */}
       <Button
         type="submit"
-        disabled={isProcessing}
+        disabled={isProcessing || isLoading || !clientSecret}
         className="w-full"
       >
-        {isProcessing ? '💳 Processing Payment...' : '💳 Complete Payment'}
+        {isLoading ? '💳 Securing Payment...' : isProcessing ? '💳 Completing Booking...' : '💳 Complete Payment'}
       </Button>
 
       {/* Security Note */}

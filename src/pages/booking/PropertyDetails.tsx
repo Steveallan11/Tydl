@@ -4,6 +4,7 @@ import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { useBooking } from '../../context/BookingContext';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { PROPERTY_SIZES } from '../../lib/constants';
 import { PropertySize } from '../../types/booking';
 
@@ -18,7 +19,18 @@ const sizeIcons: Record<PropertySize, string> = {
 export function PropertyDetails() {
   const navigate = useNavigate();
   const { formData, updateFormData, pricing } = useBooking();
+  const { customer } = useCustomerAuth();
   const [error, setError] = useState<string | null>(null);
+  const [useCustomerAddress, setUseCustomerAddress] = useState(!!customer?.full_address);
+
+  // Pre-fill address from customer profile if logged in
+  const customerAddress = customer?.full_address ||
+    `${customer?.postcode ? `Postcode: ${customer.postcode}` : 'No address on file'}`;
+
+  // If using customer address, update form data
+  if (useCustomerAddress && customer?.full_address && !formData.fullAddress) {
+    updateFormData({ fullAddress: customer.full_address });
+  }
 
   const handleNext = () => {
     if (!formData.propertySize) {
@@ -73,16 +85,81 @@ export function PropertyDetails() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
-                  Full Address
+                <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">
+                  Cleaning Address
                 </label>
-                <textarea
-                  placeholder="Your full address"
-                  value={formData.fullAddress || ''}
-                  onChange={(e) => updateFormData({ fullAddress: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
-                />
+
+                {/* Use Saved Address Option */}
+                {customer?.full_address && (
+                  <label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all mb-4 ${
+                    useCustomerAddress
+                      ? 'border-brand-500 bg-brand-50'
+                      : 'border-slate-200 hover:border-brand-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="useCustomerAddress"
+                      checked={useCustomerAddress}
+                      onChange={(e) => {
+                        setUseCustomerAddress(e.target.checked);
+                        if (e.target.checked) {
+                          updateFormData({ fullAddress: customer.full_address });
+                        }
+                      }}
+                      className="w-4 h-4 text-brand-600 accent-brand-600 mt-1"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900">Use my saved address</p>
+                      <p className="text-sm text-slate-600 mt-1">{customer.full_address}</p>
+                    </div>
+                  </label>
+                )}
+
+                {/* Different Address Option */}
+                <label className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  !useCustomerAddress || !customer?.full_address
+                    ? 'border-brand-500 bg-brand-50'
+                    : 'border-slate-200 hover:border-brand-300'
+                }`}>
+                  <input
+                    type="radio"
+                    name="useCustomerAddress"
+                    checked={!useCustomerAddress || !customer?.full_address}
+                    onChange={() => setUseCustomerAddress(false)}
+                    className="w-4 h-4 text-brand-600 accent-brand-600 mt-1"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Different address</p>
+                    <textarea
+                      placeholder="Enter the full address where we'll clean"
+                      value={formData.fullAddress || ''}
+                      onChange={(e) => {
+                        setUseCustomerAddress(false);
+                        updateFormData({ fullAddress: e.target.value });
+                      }}
+                      rows={3}
+                      className="w-full mt-2 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
+                    />
+                  </div>
+                </label>
+              </div>
+
+              {/* Before & After Images Option */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.needsBeforeAfterImages || false}
+                    onChange={(e) => updateFormData({ needsBeforeAfterImages: e.target.checked })}
+                    className="w-5 h-5 text-blue-600 rounded accent-blue-600 mt-0.5 flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-900">📸 Need before & after photos?</div>
+                    <div className="text-sm text-slate-600 mt-1">
+                      Helpful for rentals or when you want proof of the cleaning. Your cleaner will take photos at the start and end.
+                    </div>
+                  </div>
+                </label>
               </div>
 
               {error && <p className="text-sm text-red-600">{error}</p>}

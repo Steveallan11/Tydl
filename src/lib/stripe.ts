@@ -1,10 +1,11 @@
 import { supabase } from './supabase';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe as StripeType } from '@stripe/stripe-js';
 
 // Debug: Log environment variables
 console.log('[Stripe Init] VITE_STRIPE_PUBLIC_KEY:', import.meta.env.VITE_STRIPE_PUBLIC_KEY ? '✓ Set' : '✗ Missing');
 
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 if (!STRIPE_PUBLIC_KEY) {
   console.warn('[Stripe] ⚠️ Stripe public key not configured in environment variables');
@@ -26,7 +27,7 @@ interface PaymentResult {
 }
 
 // Initialize Stripe
-let stripePromise: any = null;
+let stripePromise: Promise<StripeType | null> | null = null;
 
 export async function getStripe() {
   if (!stripePromise && STRIPE_PUBLIC_KEY) {
@@ -37,23 +38,61 @@ export async function getStripe() {
 
 /**
  * Create a payment intent for a booking
- * This is called when the customer confirms their booking
+ * Calls the Supabase Edge Function to securely create a Stripe payment intent
  */
 export async function createPaymentIntent(
   bookingId: string,
   customerId: string,
   amount: number,
-  description: string
+  description: string,
+  email?: string
 ): Promise<PaymentResult> {
   try {
     if (!STRIPE_PUBLIC_KEY) {
       throw new Error('Stripe is not configured');
     }
 
-    // Call backend API to create payment intent
-    // For MVP, we're creating a simple payment record in Supabase
-    // In production, this would call a backend endpoint that uses the Stripe API
-    const { data, error } = await supabase
+    if (!SUPABASE_URL) {
+      throw new Error('Supabase URL not configured');
+    }
+
+    console.log('[Stripe] Creating payment intent via Edge Function:', {
+      bookingId,
+      customerId,
+      amount,
+      description,
+    });
+
+    // Call Supabase Edge Function to create payment intent securely
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/create-payment-intent`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
+        },
+        body: JSON.stringify({
+          amount: Math.round(amount * 100), // Convert to pence
+          description,
+          bookingId,
+          customerId,
+          email,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create payment intent');
+    }
+
+    const data = await response.json();
+
+    console.log('[Stripe] Payment intent created successfully:', data.paymentIntentId);
+
+    // Store payment intent reference in database
+    await supabase
       .from('job_financials')
       .insert([
         {
@@ -65,23 +104,18 @@ export async function createPaymentIntent(
           net_profit: 0,
           payment_method: 'card',
           payment_status: 'pending',
+          stripe_payment_id: data.paymentIntentId,
           created_at: new Date().toISOString(),
         },
-      ])
-      .select()
-      .single();
+      ]);
 
-    if (error) throw error;
-
-    // In a real implementation, this would contain the Stripe client secret
-    // For now, we're using the financial record ID as a placeholder
     return {
       success: true,
-      paymentIntentId: data.id,
-      clientSecret: `test_secret_${data.id}`, // Placeholder for testing
+      paymentIntentId: data.paymentIntentId,
+      clientSecret: data.clientSecret,
     };
   } catch (error: any) {
-    console.error('Error creating payment intent:', error);
+    console.error('[Stripe] Error creating payment intent:', error);
     return {
       success: false,
       error: error.message || 'Failed to create payment intent',

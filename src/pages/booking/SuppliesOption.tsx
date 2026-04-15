@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useEffect } from 'react-router-dom';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
@@ -8,6 +8,17 @@ import { SuppliesOption as SuppliesOptionType } from '../../types/booking';
 export function SuppliesOption() {
   const navigate = useNavigate();
   const { formData, updateFormData } = useBooking();
+
+  // Auto-skip supplies question for services where supplies are included
+  useEffect(() => {
+    const servicesWithIncludedSupplies = ['one-off-clean', 'deep-clean', 'end-of-tenancy'];
+    if (servicesWithIncludedSupplies.includes(formData.serviceType || '')) {
+      // Auto-set supplies to platform for these services
+      updateFormData({ supplies: 'platform' });
+      // Navigate to next step (frequency)
+      navigate('/book/frequency');
+    }
+  }, [formData.serviceType, navigate, updateFormData]);
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">

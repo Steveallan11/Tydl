@@ -17,6 +17,7 @@ interface CustomerAuthContextType {
   logout: () => Promise<void>;
   error: string | null;
   clearError: () => void;
+  refreshCustomer: () => Promise<void>;
 }
 
 const CustomerAuthContext = createContext<CustomerAuthContextType | undefined>(undefined);
@@ -84,6 +85,17 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
 
   const clearError = () => setError(null);
 
+  const refreshCustomer = async () => {
+    try {
+      const currentUser = await getCurrentCustomer();
+      if (currentUser) {
+        setCustomer(currentUser.customer);
+      }
+    } catch (err) {
+      console.error('Failed to refresh customer data:', err);
+    }
+  };
+
   const value: CustomerAuthContextType = {
     user,
     customer,
@@ -94,6 +106,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     logout,
     error,
     clearError,
+    refreshCustomer,
   };
 
   return (
