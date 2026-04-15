@@ -274,7 +274,7 @@ export function BookingDetail() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Created</span>
-                  <span className="text-slate-900">{new Date(booking.created_at).toLocaleDateString()}</span>
+                  <span className="text-slate-900">{booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Status</span>
