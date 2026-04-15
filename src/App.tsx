@@ -36,6 +36,7 @@ import { Account } from './pages/customer/Account';
 import { AdminLogin } from './pages/admin/Login';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import { BookingBoard } from './pages/admin/BookingBoard';
+import { BookingDetail } from './pages/admin/BookingDetail';
 import { CleanerManagement } from './pages/admin/CleanerManagement';
 import { CleanerOnboarding as AdminCleanerOnboarding } from './pages/admin/CleanerOnboarding';
 import { CleanerDetail } from './pages/admin/CleanerDetail';
@@ -100,6 +101,16 @@ export function App() {
                     <ProtectedRoute>
                       <AdminProvider>
                         <BookingBoard />
+                      </AdminProvider>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/bookings/:bookingId"
+                  element={
+                    <ProtectedRoute>
+                      <AdminProvider>
+                        <BookingDetail />
                       </AdminProvider>
                     </ProtectedRoute>
                   }

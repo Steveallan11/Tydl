@@ -278,6 +278,7 @@ export function AdminDashboard() {
                   key={booking.id}
                   booking={booking}
                   onAssign={() => navigate(`/admin/board?booking=${booking.id}`)}
+                  onClick={() => navigate(`/admin/bookings/${booking.id}`)}
                 />
               ))}
             </div>

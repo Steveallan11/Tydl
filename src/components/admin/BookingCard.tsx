@@ -5,9 +5,10 @@ import { SERVICES, PROPERTY_SIZES } from '../../lib/constants';
 interface BookingCardProps {
   booking: Booking;
   onAssign: () => void;
+  onClick?: () => void;
 }
 
-export function BookingCard({ booking, onAssign }: BookingCardProps) {
+export function BookingCard({ booking, onAssign, onClick }: BookingCardProps) {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-amber-100 text-amber-800',
@@ -24,7 +25,10 @@ export function BookingCard({ booking, onAssign }: BookingCardProps) {
   const propSize = booking.propertySize ? PROPERTY_SIZES[booking.propertySize] : undefined;
 
   return (
-    <div className="border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow bg-white">
+    <div
+      onClick={onClick}
+      className={`border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow bg-white ${onClick ? 'cursor-pointer' : ''}`}
+    >
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
