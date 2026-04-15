@@ -54,6 +54,27 @@ export function CheckoutDetails() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Pre-submit validation - check all required fields are set
+    const requiredFields: Record<string, boolean> = {
+      serviceType: !!formData.serviceType,
+      propertySize: !!formData.propertySize,
+      scheduledDate: !!formData.scheduledDate,
+      scheduledTime: !!formData.scheduledTime,
+      firstName: !!formData.firstName,
+      lastName: !!formData.lastName,
+      email: !!formData.email,
+      phone: !!formData.phone,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      setPaymentError(`Missing required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
     // Validate step 8
     const validationErrors = validateBookingStep(8, formData);
     if (validationErrors.length > 0) {

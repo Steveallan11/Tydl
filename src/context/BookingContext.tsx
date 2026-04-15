@@ -81,9 +81,23 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         throw new Error('No customer logged in');
       }
 
+      // Validate required fields
+      if (!formData.serviceType) {
+        throw new Error('Service type is required');
+      }
+      if (!formData.propertySize) {
+        throw new Error('Property size is required');
+      }
+      if (!formData.scheduledDate) {
+        throw new Error('Scheduled date is required');
+      }
+      if (!formData.scheduledTime) {
+        throw new Error('Scheduled time is required');
+      }
+
       // Normalize service type: convert hyphens to underscores for database
-      const normalizedServiceType = formData.serviceType?.replace(/-/g, '_') || '';
-      const normalizedPropertySize = formData.propertySize?.replace(/-/g, '_') || '';
+      const normalizedServiceType = formData.serviceType.replace(/-/g, '_');
+      const normalizedPropertySize = formData.propertySize.replace(/-/g, '_');
       const normalizedFrequency = (formData.frequency || 'once').replace(/-/g, '_');
 
       // Create booking in database
