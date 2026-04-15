@@ -331,6 +331,16 @@ export async function createBooking(bookingData: {
   scheduled_time: string;
   customer_notes?: string;
 }) {
+  console.log('[createBooking] Inserting booking with data:', {
+    customer_id: bookingData.customer_id,
+    service_type: bookingData.service_type,
+    property_size: bookingData.property_size,
+    supplies: bookingData.supplies,
+    frequency: bookingData.frequency,
+    scheduled_date: bookingData.scheduled_date,
+    scheduled_time: bookingData.scheduled_time,
+  });
+
   const { data, error } = await supabase
     .from('bookings')
     .insert([
@@ -342,7 +352,17 @@ export async function createBooking(bookingData: {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[createBooking] Error:', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw error;
+  }
+
+  console.log('[createBooking] Success, booking ID:', data?.id);
   return data;
 }
 

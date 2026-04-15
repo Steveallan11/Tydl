@@ -100,6 +100,15 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       const normalizedPropertySize = formData.propertySize.replace(/-/g, '_');
       const normalizedFrequency = (formData.frequency || 'once').replace(/-/g, '_');
 
+      console.log('[submitBooking] Normalized values:', {
+        serviceType: { original: formData.serviceType, normalized: normalizedServiceType },
+        propertySize: { original: formData.propertySize, normalized: normalizedPropertySize },
+        frequency: { original: formData.frequency, normalized: normalizedFrequency },
+        supplies: formData.supplies,
+        scheduledDate: formData.scheduledDate,
+        scheduledTime: formData.scheduledTime,
+      });
+
       // Create booking in database
       const booking = await createBooking({
         customer_id: customerId,
@@ -113,6 +122,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         scheduled_time: formData.scheduledTime!,
         customer_notes: formData.customerNotes,
       });
+
+      console.log('[submitBooking] Booking created successfully:', booking.id);
 
       setBookingId(booking.id);
 
