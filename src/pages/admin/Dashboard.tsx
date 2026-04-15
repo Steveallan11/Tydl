@@ -268,47 +268,80 @@ export function AdminDashboard() {
               <p className="text-slate-500 text-sm mt-2">All bookings have been assigned! 🎉</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-3 px-4 font-semibold text-slate-900">Customer</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-900">Service</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-900">Date & Time</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-900">Price</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-900">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingBookings.map(booking => (
-                    <tr key={booking.id} className="border-b border-slate-100 hover:bg-slate-50">
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {booking.firstName} {booking.lastName}
-                          </p>
-                          <p className="text-sm text-slate-500">{booking.email}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-slate-700">{booking.serviceType}</td>
-                      <td className="py-3 px-4 text-slate-700">
-                        {booking.scheduledDate} at {booking.scheduledTime}
-                      </td>
-                      <td className="py-3 px-4 font-mono font-semibold text-slate-900">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+              {pendingBookings.map(booking => (
+                <div key={booking.id} className="border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg text-slate-900">
+                        {booking.firstName} {booking.lastName}
+                      </h3>
+                      <p className="text-sm text-slate-500">{booking.email}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-brand-600 font-mono">
                         £{Math.round(booking.totalPrice)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Button
-                          size="sm"
-                          onClick={() => navigate(`/admin/board?booking=${booking.id}`)}
-                        >
-                          Assign
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      <span className="inline-block text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded mt-1">
+                        Pending
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Service Details */}
+                  <div className="bg-slate-50 rounded-lg p-3 mb-4 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-700 w-24">Service:</span>
+                      <span className="text-slate-900">{booking.serviceType?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-700 w-24">Property:</span>
+                      <span className="text-slate-900">{booking.propertySize?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-slate-700 w-24">Frequency:</span>
+                      <span className="text-slate-900">{booking.frequency || 'Once'}</span>
+                    </div>
+                    {booking.addOns && booking.addOns.length > 0 && (
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-slate-700 w-24">Add-ons:</span>
+                        <span className="text-slate-900">{(booking.addOns as any[]).join(', ')}</span>
+                      </div>
+                    )}
+                    {booking.needsBeforeAfterImages && (
+                      <div className="flex items-center gap-2 text-blue-700 bg-blue-50 p-2 rounded">
+                        <span>📸</span>
+                        <span className="text-sm font-medium">Before/after photos requested</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Date & Time */}
+                  <div className="border-t border-slate-200 pt-3 mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-slate-600">Scheduled for</p>
+                        <p className="font-semibold text-slate-900">
+                          {booking.scheduledDate} at {booking.scheduledTime}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-slate-600">Customer phone</p>
+                        <p className="font-semibold text-slate-900">{booking.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <Button
+                    className="w-full"
+                    onClick={() => navigate(`/admin/board?booking=${booking.id}`)}
+                  >
+                    👤 Assign Cleaner
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
         </Card>

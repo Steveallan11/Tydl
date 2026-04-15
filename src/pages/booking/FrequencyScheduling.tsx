@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useEffect } from 'react-router-dom';
 import { useState } from 'react';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
@@ -19,6 +19,15 @@ export function FrequencyScheduling() {
   const navigate = useNavigate();
   const { formData, updateFormData } = useBooking();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Auto-skip frequency question for one-time services
+  useEffect(() => {
+    const oneTimeServices = ['one-off-clean', 'deep-clean', 'end-of-tenancy'];
+    if (oneTimeServices.includes(formData.serviceType || '')) {
+      // Auto-set frequency to once for these services
+      updateFormData({ frequency: 'once' });
+    }
+  }, [formData.serviceType, updateFormData]);
 
   const handleFrequencyChange = (frequency: Frequency) => {
     updateFormData({ frequency });

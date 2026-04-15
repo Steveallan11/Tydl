@@ -12,6 +12,7 @@ import {
   saveCleanerBankDetails,
   saveCleanerPayoutSettings,
   logAdminActivity,
+  createCleanerAdmin,
 } from '../lib/supabase';
 import { JobFinancials, CleanerPayout } from '../types/payments';
 
@@ -203,38 +204,52 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     try {
       setError(null);
 
-      // Save bank details
-      if (cleanerData.cleanerId) {
-        await saveCleanerBankDetails(cleanerData.cleanerId, {
-          account_holder_name: cleanerData.accountHolderName,
-          sort_code: cleanerData.sortCode,
-          account_number: cleanerData.accountNumber,
-        });
+      // Step 1: Create cleaner record
+      const newCleaner = await createCleanerAdmin({
+        email: cleanerData.email,
+        first_name: cleanerData.firstName,
+        last_name: cleanerData.lastName,
+        phone: cleanerData.phone,
+        postcode: cleanerData.postcode,
+      });
 
-        // Save payout settings
-        await saveCleanerPayoutSettings(cleanerData.cleanerId, {
-          compensation_type: cleanerData.compensationType,
-          flat_rate_per_job: cleanerData.flatRatePerJob,
-          hourly_rate: cleanerData.hourlyRate,
-          percentage_of_revenue: cleanerData.percentageOfRevenue,
-          payout_frequency: cleanerData.payoutFrequency,
-          minimum_payout: cleanerData.minimumPayout,
-        });
+      if (!newCleaner.id) {
+        throw new Error('Failed to create cleaner record');
+      }
 
-        // Log activity
-        if (adminId) {
-          await logAdminActivity(
-            adminId,
-            'onboard_cleaner',
-            'cleaner',
-            cleanerData.cleanerId,
-            {},
-            {
-              compensation_type: cleanerData.compensationType,
-              payout_frequency: cleanerData.payoutFrequency,
-            }
-          );
-        }
+      const cleanerId = newCleaner.id;
+
+      // Step 2: Save bank details
+      await saveCleanerBankDetails(cleanerId, {
+        account_holder_name: cleanerData.accountHolderName,
+        sort_code: cleanerData.sortCode,
+        account_number: cleanerData.accountNumber,
+      });
+
+      // Step 3: Save payout settings
+      await saveCleanerPayoutSettings(cleanerId, {
+        compensation_type: cleanerData.compensationType,
+        flat_rate_per_job: cleanerData.flatRatePerJob,
+        hourly_rate: cleanerData.hourlyRate,
+        percentage_of_revenue: cleanerData.percentageOfRevenue,
+        payout_frequency: cleanerData.payoutFrequency,
+        minimum_payout: cleanerData.minimumPayout,
+      });
+
+      // Step 4: Log activity
+      if (adminId) {
+        await logAdminActivity(
+          adminId,
+          'onboard_cleaner',
+          'cleaner',
+          cleanerId,
+          {},
+          {
+            email: cleanerData.email,
+            compensation_type: cleanerData.compensationType,
+            payout_frequency: cleanerData.payoutFrequency,
+          }
+        );
       }
 
       await refreshData();

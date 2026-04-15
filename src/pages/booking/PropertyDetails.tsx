@@ -144,6 +144,24 @@ export function PropertyDetails() {
                 </label>
               </div>
 
+              {/* Before & After Images Option */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.needsBeforeAfterImages || false}
+                    onChange={(e) => updateFormData({ needsBeforeAfterImages: e.target.checked })}
+                    className="w-5 h-5 text-blue-600 rounded accent-blue-600 mt-0.5 flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="font-semibold text-slate-900">📸 Need before & after photos?</div>
+                    <div className="text-sm text-slate-600 mt-1">
+                      Helpful for rentals or when you want proof of the cleaning. Your cleaner will take photos at the start and end.
+                    </div>
+                  </div>
+                </label>
+              </div>
+
               {error && <p className="text-sm text-red-600">{error}</p>}
 
               <div className="flex gap-4 justify-between pt-4">

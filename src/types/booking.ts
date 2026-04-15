@@ -45,6 +45,7 @@ export interface Booking {
   scheduledTime: string; // HH:mm
   assignedCleanerId?: string;
   customerNotes?: string;
+  needsBeforeAfterImages?: boolean;
   firstName?: string;
   lastName?: string;
   email?: string;
@@ -68,4 +69,5 @@ export interface BookingFormData {
   email?: string;
   phone?: string;
   customerNotes?: string;
+  needsBeforeAfterImages?: boolean;
 }

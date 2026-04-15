@@ -77,10 +77,7 @@ export function CleanerOnboardingModal({ onClose, onSuccess }: CleanerOnboarding
 
     setIsSubmitting(true);
     try {
-      const cleanerId = `cleaner_${Date.now()}`;
-
       const success = await onboardCleaner({
-        cleanerId,
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,

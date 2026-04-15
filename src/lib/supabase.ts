@@ -330,6 +330,7 @@ export async function createBooking(bookingData: {
   scheduled_date: string;
   scheduled_time: string;
   customer_notes?: string;
+  needs_before_after_images?: boolean;
 }) {
   const { data, error } = await supabase
     .from('bookings')
@@ -477,6 +478,28 @@ export async function getCleanerById(cleanerId: string) {
     .from('cleaners')
     .select('*')
     .eq('id', cleanerId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createCleanerAdmin(cleanerData: {
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  postcode: string;
+}) {
+  const { data, error } = await supabase
+    .from('cleaners')
+    .insert([
+      {
+        ...cleanerData,
+        verification_status: 'pending',
+      },
+    ])
+    .select()
     .single();
 
   if (error) throw error;
