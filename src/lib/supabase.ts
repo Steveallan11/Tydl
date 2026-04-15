@@ -457,7 +457,8 @@ export async function getCleaners(verification_status = 'verified') {
 
     // If permission denied (406), return empty array instead of throwing
     if (error) {
-      if (error.code === '406' || error.status === 406) {
+      // Check for permission denied errors (406 or PGRST116)
+      if (error.code === '406' || error.message?.includes('406') || error.message?.includes('permission')) {
         console.warn('[getCleaners] Permission denied - user may not be admin');
         return [];
       }
