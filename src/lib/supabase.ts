@@ -476,13 +476,18 @@ export async function assignCleanerToBooking(
 // CLEANERS
 // ============================================================================
 
-export async function getCleaners(verification_status = 'verified') {
+export async function getCleaners(verification_status?: string) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('cleaners')
-      .select('*')
-      .eq('verification_status', verification_status)
-      .order('rating', { ascending: false });
+      .select('*');
+
+    // Only filter by verification_status if specified
+    if (verification_status) {
+      query = query.eq('verification_status', verification_status);
+    }
+
+    const { data, error } = await query.order('rating', { ascending: false });
 
     // If permission denied (406), return empty array instead of throwing
     if (error) {
