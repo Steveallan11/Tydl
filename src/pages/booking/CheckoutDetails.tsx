@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { StripePaymentForm } from '../../components/booking/StripePaymentForm';
 import { useBooking } from '../../context/BookingContext';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { validateBookingStep } from '../../lib/validation';
@@ -10,12 +11,15 @@ import { validateDiscountCode, useDiscountCode } from '../../lib/email';
 
 export function CheckoutDetails() {
   const navigate = useNavigate();
-  const { formData, updateFormData, isSubmitting, submitBooking, pricing } = useBooking();
+  const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
   const { customer } = useCustomerAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [discountCode, setDiscountCode] = useState('');
   const [discountError, setDiscountError] = useState('');
   const [discountApplied, setDiscountApplied] = useState<{ code: string; percentage: number } | null>(null);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   // Pre-fill from customer profile on mount
   useEffect(() => {
@@ -63,22 +67,41 @@ export function CheckoutDetails() {
       return;
     }
 
+    // Show payment form instead of direct submission
+    setShowPaymentForm(true);
+  };
+
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
     if (!customer?.id) {
-      console.error('No customer ID found');
+      setPaymentError('No customer ID found');
       return;
     }
 
     try {
+      setPaymentProcessing(true);
+      setPaymentError('');
+
+      // Submit booking after successful payment
       await submitBooking(customer.id);
+
       // Mark discount code as used if applied
       if (discountApplied) {
         useDiscountCode(discountApplied.code);
       }
+
       // Navigate to confirmation after successful submission
       navigate('/book/confirmation');
     } catch (error) {
       console.error('Booking submission failed:', error);
+      setPaymentError('Booking submission failed. Please try again.');
+    } finally {
+      setPaymentProcessing(false);
     }
+  };
+
+  const handlePaymentError = (error: string) => {
+    setPaymentError(error);
+    setShowPaymentForm(true);
   };
 
   return (
@@ -261,20 +284,41 @@ export function CheckoutDetails() {
             </p>
           </div>
 
+          {/* Payment Form (shown after validation) */}
+          {showPaymentForm && (
+            <div className="border-t border-slate-200 pt-6">
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">💳 Payment</h2>
+              {paymentError && (
+                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-700">{paymentError}</p>
+                </div>
+              )}
+              <StripePaymentForm
+                amount={Math.round(pricing.totalPrice * (1 - (discountApplied?.percentage || 0) / 100) * 100)}
+                bookingId={bookingId || 'temp'}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+                isProcessing={paymentProcessing}
+              />
+            </div>
+          )}
+
           {/* Buttons */}
-          <div className="flex gap-4 justify-between pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/book/summary')}
-              disabled={isSubmitting}
-            >
-              ← Back
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Processing...' : 'Confirm Booking'}
-            </Button>
-          </div>
+          {!showPaymentForm && (
+            <div className="flex gap-4 justify-between pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/book/summary')}
+                disabled={isSubmitting}
+              >
+                ← Back
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Processing...' : 'Continue to Payment'}
+              </Button>
+            </div>
+          )}
         </form>
       </Card>
     </div>
