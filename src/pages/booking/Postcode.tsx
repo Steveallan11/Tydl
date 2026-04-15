@@ -1,15 +1,29 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { useBooking } from '../../context/BookingContext';
+import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { validatePostcode } from '../../lib/validation';
 
 export function Postcode() {
   const navigate = useNavigate();
   const { formData, updateFormData } = useBooking();
+  const { customer } = useCustomerAuth();
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-advance if logged in and has postcode
+  useEffect(() => {
+    if (!customer) {
+      // Not logged in - redirect to signup
+      navigate('/customer/signup', { replace: true });
+    } else if (customer.postcode && !formData.postcode) {
+      // Logged in with postcode on file - use it and advance
+      updateFormData({ postcode: customer.postcode });
+      navigate('/book/service', { replace: true });
+    }
+  }, [customer, navigate, formData.postcode, updateFormData]);
 
   const handlePostcodeChange = (value: string) => {
     updateFormData({ postcode: value });
