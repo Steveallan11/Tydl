@@ -20,10 +20,8 @@ export function BookingCard({ booking, onAssign }: BookingCardProps) {
     return colors[status] || 'bg-slate-100 text-slate-800';
   };
 
-  const serviceKey = booking.serviceType as any;
-  const service = SERVICES[serviceKey];
-  const propSizeKey = booking.propertySize as any;
-  const propSize = PROPERTY_SIZES[propSizeKey];
+  const service = booking.serviceType ? SERVICES[booking.serviceType] : undefined;
+  const propSize = booking.propertySize ? PROPERTY_SIZES[booking.propertySize] : undefined;
 
   return (
     <div className="border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow bg-white">

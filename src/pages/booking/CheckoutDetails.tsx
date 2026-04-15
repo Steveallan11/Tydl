@@ -13,11 +13,6 @@ export function CheckoutDetails() {
   const navigate = useNavigate();
   const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
   const { customer, refreshCustomer } = useCustomerAuth();
-
-export function CheckoutDetails() {
-  const navigate = useNavigate();
-  const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
-  const { customer } = useCustomerAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [discountCode, setDiscountCode] = useState('');
   const [discountError, setDiscountError] = useState('');
