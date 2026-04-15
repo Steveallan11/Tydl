@@ -139,10 +139,17 @@ export function AdminDashboard() {
               </Button>
               <Button
                 variant="secondary"
-                onClick={() => setStatusFilter('pending')}
+                onClick={() => navigate('/admin/financial')}
                 className="w-full text-left"
               >
-                ⏳ View Pending Bookings
+                💰 Financial Dashboard
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => navigate('/admin/settings')}
+                className="w-full text-left"
+              >
+                ⚙️ Settings & Pricing
               </Button>
             </div>
           </Card>

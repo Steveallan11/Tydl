@@ -71,7 +71,7 @@ export function AnimatedCounter({
   }, [isVisible, value, duration]);
 
   return (
-    <div ref={ref} className="text-4xl font-bold text-brand-600">
+    <div ref={ref} className="text-4xl font-bold text-white">
       {count}
       {suffix}
     </div>
