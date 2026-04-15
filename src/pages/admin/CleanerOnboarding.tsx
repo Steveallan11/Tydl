@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { DebugPanel } from '../../components/common/DebugPanel';
 import { useAdmin } from '../../context/AdminContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -128,8 +129,10 @@ export function CleanerOnboarding() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="mb-8">
+    <>
+      <DebugPanel />
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="mb-8">
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Onboard Cleaner</h1>
         <p className="text-slate-600">Add a new cleaner to the platform</p>
       </div>
@@ -350,6 +353,7 @@ export function CleanerOnboarding() {
           </div>
         </form>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
