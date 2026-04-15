@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
+import { loadStripe } from '@stripe/stripe-js';
 
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-const STRIPE_SECRET_KEY = import.meta.env.VITE_STRIPE_SECRET_KEY;
 
 interface PaymentIntent {
   id: string;
@@ -15,6 +15,16 @@ interface PaymentResult {
   paymentIntentId?: string;
   clientSecret?: string;
   error?: string;
+}
+
+// Initialize Stripe
+let stripePromise: any = null;
+
+export async function getStripe() {
+  if (!stripePromise && STRIPE_PUBLIC_KEY) {
+    stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
+  }
+  return stripePromise;
 }
 
 /**
@@ -32,19 +42,22 @@ export async function createPaymentIntent(
       throw new Error('Stripe is not configured');
     }
 
-    // Call backend API to create payment intent (requires backend endpoint)
-    // For now, we'll store the payment metadata in Supabase
+    // Call backend API to create payment intent
+    // For MVP, we're creating a simple payment record in Supabase
+    // In production, this would call a backend endpoint that uses the Stripe API
     const { data, error } = await supabase
       .from('job_financials')
       .insert([
         {
           booking_id: bookingId,
+          customer_id: customerId,
           customer_payment: amount,
           cleaner_payout: 0, // Will be calculated separately
           platform_fee: 0,
           net_profit: 0,
           payment_method: 'card',
           payment_status: 'pending',
+          created_at: new Date().toISOString(),
         },
       ])
       .select()
@@ -52,9 +65,12 @@ export async function createPaymentIntent(
 
     if (error) throw error;
 
+    // In a real implementation, this would contain the Stripe client secret
+    // For now, we're using the financial record ID as a placeholder
     return {
       success: true,
       paymentIntentId: data.id,
+      clientSecret: `test_secret_${data.id}`, // Placeholder for testing
     };
   } catch (error: any) {
     console.error('Error creating payment intent:', error);
@@ -116,18 +132,27 @@ export async function getPaymentStatus(bookingId: string) {
 }
 
 /**
- * Initialize Stripe (on client side)
+ * Get Stripe configuration for Elements
  */
-export function initializeStripe() {
+export function getStripeConfig() {
   if (!STRIPE_PUBLIC_KEY) {
     console.warn('Stripe public key not configured');
     return null;
   }
 
-  // This would use @stripe/react-stripe-js in a real implementation
-  // For now, we're just storing the configuration
   return {
     publishableKey: STRIPE_PUBLIC_KEY,
+    appearance: {
+      theme: 'stripe' as const,
+      variables: {
+        colorPrimary: '#4f46e5', // brand-600
+        colorBackground: '#ffffff',
+        colorText: '#1e293b',
+        colorDanger: '#dc2626',
+        borderRadius: '8px',
+        fontFamily: 'system-ui, sans-serif',
+      },
+    },
   };
 }
 
