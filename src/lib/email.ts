@@ -93,7 +93,7 @@ export async function sendDiscountCodeEmail(email: string, discountCode: string,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'noreply@tydl.co.uk',
+        from: 'noreply@resend.dev',
         to: email,
         subject: `Your ${percentage}% Discount Code for Tydl Cleaning 🎉`,
         html: `
@@ -196,7 +196,7 @@ export async function sendBookingConfirmationEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'noreply@tydl.co.uk',
+        from: 'noreply@resend.dev',
         to: email,
         subject: `Your Booking Confirmation - Tydl Cleaning ✓`,
         html: `
@@ -285,6 +285,166 @@ export async function sendBookingConfirmationEmail(
     return true;
   } catch (error) {
     console.error('Error sending booking confirmation email:', error);
+    return false;
+  }
+}
+
+/**
+ * Send job assignment email to cleaner
+ */
+export async function sendCleanerJobNotificationEmail(
+  cleanerEmail: string,
+  cleanerName: string,
+  jobDetails: {
+    bookingId: string;
+    customerName: string;
+    serviceType: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    propertySize: string;
+    address: string;
+    customerPhone?: string;
+    customerNotes?: string;
+    totalPrice: number;
+  }
+) {
+  try {
+    if (!RESEND_API_KEY) {
+      console.warn('Resend API key not configured, skipping email');
+      return true;
+    }
+
+    const dateObj = new Date(jobDetails.scheduledDate);
+    const formattedDate = dateObj.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'noreply@resend.dev',
+        to: cleanerEmail,
+        subject: `New Job Assigned! 🧹 ${jobDetails.customerName} - ${formattedDate}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+                .container { max-width: 600px; margin: 0 auto; }
+                .header { background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; padding: 40px; text-align: center; }
+                .content { padding: 40px; background: #f5f5f5; }
+                .job-box { background: white; padding: 30px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #4f46e5; }
+                .details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+                .detail-item { background: #f9f9f9; padding: 15px; border-radius: 6px; }
+                .detail-label { color: #666; font-size: 12px; text-transform: uppercase; }
+                .detail-value { color: #333; font-weight: bold; font-size: 16px; margin-top: 5px; }
+                .status { display: inline-block; background: #dbeafe; color: #1e40af; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+                .button { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+                .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>You Have a New Job! 🧹</h1>
+                  <p>A customer needs your expertise</p>
+                </div>
+                <div class="content">
+                  <p>Hi ${cleanerName},</p>
+                  <p>Congratulations! A new job has been assigned to you. Here are the details:</p>
+
+                  <div class="job-box">
+                    <div style="margin-bottom: 20px;">
+                      <span class="status">JOB ASSIGNED</span>
+                      <p style="margin-top: 10px; color: #666; font-size: 12px;">Job ID: ${jobDetails.bookingId}</p>
+                    </div>
+
+                    <div class="details">
+                      <div class="detail-item">
+                        <div class="detail-label">Customer</div>
+                        <div class="detail-value">${jobDetails.customerName}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Date</div>
+                        <div class="detail-value">${formattedDate}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Time</div>
+                        <div class="detail-value">${jobDetails.scheduledTime}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Service</div>
+                        <div class="detail-value" style="text-transform: capitalize;">${jobDetails.serviceType.replace('-', ' ')}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Property Size</div>
+                        <div class="detail-value" style="text-transform: capitalize;">${jobDetails.propertySize.replace('-', ' ')}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Your Earnings</div>
+                        <div class="detail-value">£${jobDetails.totalPrice.toFixed(2)}</div>
+                      </div>
+                    </div>
+
+                    <div style="background: #f0f9ff; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                      <h4 style="margin-top: 0;">📍 Address</h4>
+                      <p style="margin: 0; color: #333;">${jobDetails.address}</p>
+                    </div>
+
+                    ${jobDetails.customerPhone ? `
+                    <div style="background: #f0f9ff; padding: 15px; border-radius: 6px; margin-top: 15px;">
+                      <h4 style="margin-top: 0;">📱 Customer Contact</h4>
+                      <p style="margin: 0; color: #333;">${jobDetails.customerPhone}</p>
+                    </div>
+                    ` : ''}
+
+                    ${jobDetails.customerNotes ? `
+                    <div style="background: #fef3c7; padding: 15px; border-radius: 6px; margin-top: 15px;">
+                      <h4 style="margin-top: 0;">💬 Customer Notes</h4>
+                      <p style="margin: 0; color: #333; font-style: italic;">"${jobDetails.customerNotes}"</p>
+                    </div>
+                    ` : ''}
+                  </div>
+
+                  <h3 style="margin-top: 30px;">Next Steps:</h3>
+                  <ol>
+                    <li>Review the job details</li>
+                    <li>Log into your Tydl portal to accept the job</li>
+                    <li>On the day, start the job and stay in touch with the customer</li>
+                    <li>Mark complete when done - earnings credited to your account!</li>
+                  </ol>
+
+                  <p style="color: #666; font-size: 12px; margin-top: 20px;">
+                    <strong>Questions?</strong> Reply to this email or contact Tydl support.
+                  </p>
+
+                  <a href="https://tydl.co.uk/cleaner/jobs" class="button">View in Portal</a>
+                </div>
+                <div class="footer">
+                  <p>© 2026 Tydl Cleaning. All rights reserved.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send email');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending cleaner job notification email:', error);
     return false;
   }
 }
