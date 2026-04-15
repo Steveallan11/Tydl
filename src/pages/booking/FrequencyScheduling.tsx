@@ -109,19 +109,37 @@ export function FrequencyScheduling() {
             {errors.scheduledDate && <p className="text-sm text-red-600 mt-2">{errors.scheduledDate}</p>}
           </div>
 
-          {/* Time */}
+          {/* Time - Hourly Options */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">
+            <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">
               Preferred time
             </label>
-            <input
-              type="time"
-              value={formData.scheduledTime || ''}
-              onChange={(e) => updateFormData({ scheduledTime: e.target.value })}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
-                errors.scheduledTime ? 'border-red-500 bg-red-50' : 'border-slate-300'
-              }`}
-            />
+            <div className="grid grid-cols-4 gap-2">
+              {Array.from({ length: 12 }, (_, i) => {
+                const hour = 8 + i; // 8am to 7pm
+                const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+                const displayTime = hour > 12 ? `${hour - 12}pm` : hour === 12 ? '12pm' : `${hour}am`;
+                return (
+                  <button
+                    key={timeStr}
+                    type="button"
+                    onClick={() => {
+                      updateFormData({ scheduledTime: timeStr });
+                      if (errors.scheduledTime) {
+                        setErrors({ ...errors, scheduledTime: '' });
+                      }
+                    }}
+                    className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                      formData.scheduledTime === timeStr
+                        ? 'bg-brand-600 text-white border-2 border-brand-600'
+                        : 'bg-slate-100 text-slate-700 border-2 border-slate-200 hover:border-brand-300'
+                    }`}
+                  >
+                    {displayTime}
+                  </button>
+                );
+              })}
+            </div>
             {errors.scheduledTime && <p className="text-sm text-red-600 mt-2">{errors.scheduledTime}</p>}
             <p className="text-xs text-slate-500 mt-2">We'll confirm the exact time with your cleaner.</p>
           </div>

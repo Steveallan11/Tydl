@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState } from 'react';
 import { BookingFormData } from '../types/booking';
 import { calculatePricing, PricingBreakdown } from '../lib/pricing';
-import { createBooking, updateCustomerProfile } from '../lib/supabase';
+import { createBooking, updateCustomerProfile, sendNotification } from '../lib/supabase';
+import { sendBookingConfirmationEmail } from '../lib/email';
 
 interface BookingContextType {
   // Form data
@@ -113,22 +114,24 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       // Send confirmation email
       if (formData.email && formData.firstName && formData.lastName) {
         try {
-          await fetch('/api/send-confirmation', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              bookingId: booking.id,
-              email: formData.email,
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              serviceType: formData.serviceType,
-              scheduledDate: formData.scheduledDate,
-              scheduledTime: formData.scheduledTime,
-              totalPrice: pricing.totalPrice,
-            }),
+          await sendBookingConfirmationEmail(formData.email, formData.firstName, {
+            bookingId: booking.id,
+            serviceType: formData.serviceType || 'cleaning',
+            scheduledDate: formData.scheduledDate || new Date().toISOString(),
+            scheduledTime: formData.scheduledTime || '09:00',
+            totalPrice: pricing.totalPrice,
           });
+
+          // Also send in-app notification
+          await sendNotification(
+            customerId,
+            'customer',
+            'booking_confirmed',
+            'Booking Confirmed!',
+            `Your ${formData.serviceType} booking for ${formData.scheduledDate} has been confirmed.`,
+            { bookingId: booking.id },
+            'in-app'
+          );
         } catch (emailError) {
           console.error('Failed to send confirmation email:', emailError);
           // Don't block booking if email fails

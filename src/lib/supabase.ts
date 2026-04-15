@@ -591,3 +591,415 @@ export async function createAdminUser(email: string, role = 'admin') {
   if (error) throw error;
   return data;
 }
+
+// ============================================================================
+// CLEANER BANK DETAILS & PAYOUT SETTINGS
+// ============================================================================
+
+export async function saveCleanerBankDetails(cleanerId: string, bankDetails: {
+  account_holder_name: string;
+  sort_code: string;
+  account_number: string;
+}) {
+  const { data, error } = await supabase
+    .from('cleaner_bank_details')
+    .upsert(
+      {
+        cleaner_id: cleanerId,
+        ...bankDetails,
+      },
+      { onConflict: 'cleaner_id' }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getCleanerBankDetails(cleanerId: string) {
+  const { data, error } = await supabase
+    .from('cleaner_bank_details')
+    .select('*')
+    .eq('cleaner_id', cleanerId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
+  return data || null;
+}
+
+export async function saveCleanerPayoutSettings(cleanerId: string, settings: {
+  compensation_type: string;
+  flat_rate_per_job?: number;
+  hourly_rate?: number;
+  percentage_of_revenue?: number;
+  payout_frequency: string;
+  minimum_payout?: number;
+}) {
+  const { data, error } = await supabase
+    .from('cleaner_payout_settings')
+    .upsert(
+      {
+        cleaner_id: cleanerId,
+        ...settings,
+      },
+      { onConflict: 'cleaner_id' }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getCleanerPayoutSettings(cleanerId: string) {
+  const { data, error } = await supabase
+    .from('cleaner_payout_settings')
+    .select('*')
+    .eq('cleaner_id', cleanerId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+}
+
+// ============================================================================
+// JOB FINANCIALS
+// ============================================================================
+
+export async function createJobFinancials(bookingId: string, financials: {
+  customer_payment: number;
+  cleaner_payout: number;
+  platform_fee: number;
+  net_profit: number;
+  payment_method?: string;
+}) {
+  const { data, error } = await supabase
+    .from('job_financials')
+    .insert([
+      {
+        booking_id: bookingId,
+        ...financials,
+        payment_status: 'pending',
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getJobFinancials(bookingId: string) {
+  const { data, error } = await supabase
+    .from('job_financials')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+}
+
+export async function updateJobFinancialStatus(bookingId: string, paymentStatus: string) {
+  const { data, error } = await supabase
+    .from('job_financials')
+    .update({ payment_status: paymentStatus })
+    .eq('booking_id', bookingId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getAllJobFinancials() {
+  const { data, error } = await supabase
+    .from('job_financials')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================================
+// TIME ENTRIES
+// ============================================================================
+
+export async function createTimeEntry(bookingId: string, cleanerId: string, scheduledDuration: number) {
+  const { data, error } = await supabase
+    .from('time_entries')
+    .insert([
+      {
+        booking_id: bookingId,
+        cleaner_id: cleanerId,
+        scheduled_duration: scheduledDuration,
+        status: 'scheduled',
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateTimeEntry(timeEntryId: string, updates: {
+  actual_start_time?: string;
+  actual_end_time?: string;
+  actual_duration?: number;
+  break_duration?: number;
+  notes?: string;
+  status?: string;
+}) {
+  const { data, error } = await supabase
+    .from('time_entries')
+    .update(updates)
+    .eq('id', timeEntryId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getTimeEntry(bookingId: string) {
+  const { data, error } = await supabase
+    .from('time_entries')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+}
+
+// ============================================================================
+// CLEANER PAYOUTS
+// ============================================================================
+
+export async function createCleanerPayout(
+  cleanerId: string,
+  payoutData: {
+    payout_period_start: string;
+    payout_period_end: string;
+    total_amount: number;
+    num_jobs: number;
+  }
+) {
+  const { data, error } = await supabase
+    .from('cleaner_payouts')
+    .insert([
+      {
+        cleaner_id: cleanerId,
+        ...payoutData,
+        status: 'pending',
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCleanerPayoutStatus(payoutId: string, status: string) {
+  const { data, error } = await supabase
+    .from('cleaner_payouts')
+    .update({ status })
+    .eq('id', payoutId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getCleanerPayouts(cleanerId: string, limit = 50) {
+  const { data, error } = await supabase
+    .from('cleaner_payouts')
+    .select('*')
+    .eq('cleaner_id', cleanerId)
+    .order('payout_period_start', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getPayoutsByStatus(status: string) {
+  const { data, error } = await supabase
+    .from('cleaner_payouts')
+    .select('*')
+    .eq('status', status)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function addPayoutItem(payoutId: string, payoutItem: {
+  booking_id: string;
+  job_financials_id: string;
+  amount: number;
+}) {
+  const { data, error } = await supabase
+    .from('payout_items')
+    .insert([
+      {
+        payout_id: payoutId,
+        ...payoutItem,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getPayoutItems(payoutId: string) {
+  const { data, error } = await supabase
+    .from('payout_items')
+    .select(`
+      *,
+      job_financials:job_financials_id(customer_payment, cleaner_payout, platform_fee),
+      booking:booking_id(id, service_type, scheduled_date, customer_id)
+    `)
+    .eq('payout_id', payoutId);
+
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+export async function sendNotification(
+  recipientId: string,
+  recipientType: 'customer' | 'cleaner' | 'admin',
+  notificationType: string,
+  title: string,
+  message: string,
+  metadata?: Record<string, any>,
+  channel: 'in-app' | 'email' | 'sms' = 'in-app'
+) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .insert([
+      {
+        recipient_id: recipientId,
+        recipient_type: recipientType,
+        notification_type: notificationType,
+        title,
+        message,
+        metadata,
+        channel,
+        status: 'sent',
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getNotifications(userId: string, userType: string, limit = 50) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('recipient_id', userId)
+    .eq('recipient_type', userType)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data;
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .update({ status: 'read', read_at: new Date().toISOString() })
+    .eq('id', notificationId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getNotificationPreferences(userId: string, userType: string) {
+  const { data, error } = await supabase
+    .from('notification_preferences')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('user_type', userType)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
+}
+
+export async function updateNotificationPreferences(
+  userId: string,
+  userType: string,
+  preferences: {
+    email_notifications?: boolean;
+    sms_notifications?: boolean;
+    in_app_notifications?: boolean;
+    booking_updates?: boolean;
+    payment_updates?: boolean;
+    marketing_emails?: boolean;
+  }
+) {
+  const { data, error } = await supabase
+    .from('notification_preferences')
+    .upsert(
+      {
+        user_id: userId,
+        user_type: userType,
+        ...preferences,
+      },
+      { onConflict: 'user_id,user_type' }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// ============================================================================
+// ADMIN ACTIVITY LOG
+// ============================================================================
+
+export async function logAdminActivity(
+  adminId: string,
+  action: string,
+  entityType: 'booking' | 'cleaner' | 'payout' | 'customer',
+  entityId: string,
+  oldValues?: Record<string, any>,
+  newValues?: Record<string, any>
+) {
+  const { data, error } = await supabase
+    .from('admin_activity_log')
+    .insert([
+      {
+        admin_id: adminId,
+        action,
+        entity_type: entityType,
+        entity_id: entityId,
+        old_values: oldValues,
+        new_values: newValues,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
