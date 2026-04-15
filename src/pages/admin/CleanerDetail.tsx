@@ -4,6 +4,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { DebugPanel } from '../../components/common/DebugPanel';
 import { useAdmin } from '../../context/AdminContext';
+import { updateCleaner } from '../../lib/supabase';
 
 export function CleanerDetail() {
   const { cleanerId } = useParams<{ cleanerId: string }>();
@@ -62,12 +63,13 @@ export function CleanerDetail() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // TODO: Add API call to update cleaner
-      console.log('[CleanerDetail] Would save:', formData);
+      console.log('[CleanerDetail] Saving cleaner:', cleanerId, formData);
+      await updateCleaner(cleanerId!, formData);
       await refreshData();
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving cleaner:', error);
+      alert('Error saving cleaner. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -89,21 +91,25 @@ export function CleanerDetail() {
   return (
     <>
       <DebugPanel />
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">
-              {cleaner.firstName} {cleaner.lastName}
-            </h1>
-            <p className="text-slate-600">{cleaner.email}</p>
-          </div>
+      <div className="max-w-4xl mx-auto px-6 py-6">
+        {/* Navigation Bar */}
+        <div className="mb-8 pb-4 border-b border-slate-200 flex items-center justify-between">
           <Button
             variant="outline"
             onClick={() => navigate('/admin/cleaners')}
+            className="mb-0"
           >
-            ← Back
+            ← Back to Cleaners
           </Button>
+          <p className="text-sm text-slate-500">Cleaner ID: {cleaner.id.substring(0, 8)}...</p>
+        </div>
+
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            {cleaner.firstName} {cleaner.lastName}
+          </h1>
+          <p className="text-slate-600">{cleaner.email}</p>
         </div>
 
         {/* Status Overview */}

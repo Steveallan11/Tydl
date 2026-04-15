@@ -517,6 +517,36 @@ export async function getCleanerById(cleanerId: string) {
   return data;
 }
 
+export async function updateCleaner(cleanerId: string, updates: any) {
+  try {
+    const { data, error } = await supabase
+      .from('cleaners')
+      .update({
+        first_name: updates.firstName,
+        last_name: updates.lastName,
+        email: updates.email,
+        phone: updates.phone,
+        postcode: updates.postcode,
+        verification_status: updates.verificationStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', cleanerId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[updateCleaner] Error:', error);
+      throw error;
+    }
+
+    console.log('[updateCleaner] Successfully updated cleaner:', cleanerId);
+    return data;
+  } catch (error: any) {
+    console.error('[updateCleaner] Error updating cleaner:', error);
+    throw error;
+  }
+}
+
 export async function createCleanerAdmin(cleanerData: {
   email: string;
   first_name: string;
