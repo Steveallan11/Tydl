@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
-import { StripePaymentForm } from '../../components/booking/StripePaymentForm';
 import { useBooking } from '../../context/BookingContext';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { validateBookingStep } from '../../lib/validation';
@@ -17,7 +16,6 @@ export function CheckoutDetails() {
   const [discountCode, setDiscountCode] = useState('');
   const [discountError, setDiscountError] = useState('');
   const [discountApplied, setDiscountApplied] = useState<{ code: string; percentage: number } | null>(null);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
@@ -67,19 +65,11 @@ export function CheckoutDetails() {
       return;
     }
 
-    // Show payment form instead of direct submission
-    setPaymentError('');
-    setShowPaymentForm(true);
-    console.log('[CheckoutDetails] Showing payment form');
-  };
-
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
-    console.log('[CheckoutDetails] Payment successful:', paymentIntentId);
-
+    // For now, skip Stripe and submit booking directly for testing
+    // TODO: Re-enable Stripe payment flow once validation is fixed
     if (!customer?.id) {
       console.error('[CheckoutDetails] No customer ID found');
       setPaymentError('No customer ID found');
-      setShowPaymentForm(true);
       return;
     }
 
@@ -87,19 +77,12 @@ export function CheckoutDetails() {
       setPaymentProcessing(true);
       setPaymentError('');
 
-      console.log('[CheckoutDetails] Submitting booking for customer:', customer.id);
-      console.log('[CheckoutDetails] Booking data:', {
-        serviceType: formData.serviceType,
-        propertySize: formData.propertySize,
-        totalPrice: pricing.totalPrice,
-        scheduledDate: formData.scheduledDate,
-        scheduledTime: formData.scheduledTime,
-      });
+      console.log('[CheckoutDetails] Submitting booking directly (Stripe disabled for testing)');
 
-      // Submit booking after successful payment
+      // Submit booking after validation
       await submitBooking(customer.id);
 
-      console.log('[CheckoutDetails] Booking submitted successfully, hiding payment form');
+      console.log('[CheckoutDetails] Booking submitted successfully');
 
       // Refresh customer data to reflect saved address for future bookings
       try {
@@ -107,7 +90,6 @@ export function CheckoutDetails() {
         console.log('[CheckoutDetails] Customer profile refreshed with updated address');
       } catch (refreshError) {
         console.error('[CheckoutDetails] Failed to refresh customer profile:', refreshError);
-        // Don't block on this error - booking is already successful
       }
 
       // Mark discount code as used if applied
@@ -115,32 +97,18 @@ export function CheckoutDetails() {
         useDiscountCode(discountApplied.code);
       }
 
-      // Hide payment form to prevent re-submission
-      setShowPaymentForm(false);
-
-      // Navigate to confirmation after successful submission
+      // Navigate to confirmation
       console.log('[CheckoutDetails] Navigating to confirmation');
       setTimeout(() => navigate('/book/confirmation'), 500);
     } catch (error: any) {
       console.error('[CheckoutDetails] Booking submission failed:', error);
       const errorMsg = error.message || error.toString() || 'Booking submission failed. Please try again.';
-      console.error('[CheckoutDetails] Error details:', {
-        message: errorMsg,
-        name: error.name,
-        code: error.code,
-        stack: error.stack,
-      });
       setPaymentError(errorMsg);
-      setShowPaymentForm(true);
     } finally {
       setPaymentProcessing(false);
     }
   };
 
-  const handlePaymentError = (error: string) => {
-    setPaymentError(error);
-    setShowPaymentForm(true);
-  };
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
@@ -150,11 +118,72 @@ export function CheckoutDetails() {
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Confirm Your Details</h1>
         <p className="text-slate-600 mb-6">We've pre-filled your information from your profile. Update if needed.</p>
 
-        {/* Profile Info Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-          <p className="text-sm text-blue-900">
-            <strong>{customer?.first_name} {customer?.last_name}</strong> • {customer?.email} • {customer?.phone}
-          </p>
+        {/* Booking Summary - What They're Getting */}
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-6 mb-8">
+          <h3 className="font-bold text-lg text-slate-900 mb-4">📋 Your Booking Summary</h3>
+
+          <div className="space-y-3 text-sm">
+            {/* Service */}
+            <div className="flex justify-between py-2">
+              <span className="text-slate-600">Service Type:</span>
+              <span className="font-semibold text-slate-900">{formData.serviceType?.replace(/-/g, ' ').toUpperCase()}</span>
+            </div>
+
+            {/* Property Size */}
+            <div className="flex justify-between py-2 border-t border-brand-200">
+              <span className="text-slate-600">Property Size:</span>
+              <span className="font-semibold text-slate-900">{formData.propertySize?.replace(/-/g, ' ').toUpperCase()}</span>
+            </div>
+
+            {/* Supplies */}
+            <div className="flex justify-between py-2">
+              <span className="text-slate-600">Supplies:</span>
+              <span className="font-semibold text-slate-900">
+                {formData.supplies === 'platform' ? '✓ We Provide' : '✓ You Provide'}
+              </span>
+            </div>
+
+            {/* Frequency */}
+            <div className="flex justify-between py-2">
+              <span className="text-slate-600">Frequency:</span>
+              <span className="font-semibold text-slate-900">{formData.frequency?.toUpperCase() || 'ONCE'}</span>
+            </div>
+
+            {/* Scheduled Date & Time */}
+            <div className="flex justify-between py-2 border-t border-brand-200">
+              <span className="text-slate-600">Scheduled Date:</span>
+              <span className="font-semibold text-slate-900">{formData.scheduledDate}</span>
+            </div>
+
+            <div className="flex justify-between py-2">
+              <span className="text-slate-600">Scheduled Time:</span>
+              <span className="font-semibold text-slate-900">{formData.scheduledTime}</span>
+            </div>
+
+            {/* Add-ons */}
+            {formData.addOns && formData.addOns.length > 0 && (
+              <div className="py-2 border-t border-brand-200">
+                <div className="text-slate-600 mb-2">Add-ons:</div>
+                <div className="flex flex-wrap gap-2">
+                  {(formData.addOns as any[]).map((addon) => (
+                    <span key={addon} className="inline-block bg-brand-200 text-brand-900 text-xs px-3 py-1 rounded-full font-medium">
+                      + {addon}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Before/After Images */}
+            {formData.needsBeforeAfterImages && (
+              <div className="py-2 border-t border-brand-200">
+                <div className="flex items-center gap-2 text-blue-700 bg-blue-50 p-2 rounded">
+                  <span>📸</span>
+                  <span className="text-sm font-medium">Before & After Photos Requested</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -316,57 +345,40 @@ export function CheckoutDetails() {
           </div>
 
           {/* Trust Badge */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-blue-900">
               🔒 Your information is secure and only used to confirm your booking.
             </p>
           </div>
 
-          {/* Payment Form (shown after validation) */}
-          {showPaymentForm && (
-            <div className="border-t border-slate-200 pt-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">💳 Payment</h2>
-              {paymentError && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-700">{paymentError}</p>
-                </div>
-              )}
-              {(() => {
-                const discountMultiplier = 1 - (discountApplied?.percentage || 0) / 100;
-                const finalPrice = pricing.totalPrice * discountMultiplier;
-                const paymentAmount = Math.round(finalPrice * 100); // Convert to pence for Stripe
-                console.log('[CheckoutDetails] Payment form - Total price:', pricing.totalPrice, 'Discount:', discountApplied?.percentage, 'Final amount in pence:', paymentAmount);
-                return (
-                  <StripePaymentForm
-                    amount={paymentAmount}
-                    bookingId={bookingId || 'pending'}
-                    customerId={customer?.id}
-                    customerEmail={formData.email}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    isProcessing={paymentProcessing}
-                  />
-                );
-              })()}
+          {/* Payment Error */}
+          {paymentError && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-700">{paymentError}</p>
             </div>
           )}
 
+          {/* Testing Note */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-amber-900">
+              ⚠️ <strong>Testing Mode:</strong> Payment processing is disabled. Click "Confirm Booking" to complete your booking and receive a confirmation email.
+            </p>
+          </div>
+
           {/* Buttons */}
-          {!showPaymentForm && (
-            <div className="flex gap-4 justify-between pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/book/summary')}
-                disabled={isSubmitting}
-              >
-                ← Back
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Processing...' : 'Continue to Payment'}
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-4 justify-between pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate('/book/summary')}
+              disabled={isSubmitting || paymentProcessing}
+            >
+              ← Back
+            </Button>
+            <Button type="submit" disabled={isSubmitting || paymentProcessing}>
+              {isSubmitting || paymentProcessing ? 'Processing...' : '✓ Confirm Booking'}
+            </Button>
+          </div>
         </form>
       </Card>
     </div>
