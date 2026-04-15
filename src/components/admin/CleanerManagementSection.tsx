@@ -1,13 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { useAdmin } from '../../context/AdminContext';
-import { CleanerOnboardingModal } from './CleanerOnboardingModal';
 import { Cleaner } from '../../types/operations';
 
 export function CleanerManagementSection() {
-  const { cleaners, onboardCleaner, refreshData } = useAdmin();
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const navigate = useNavigate();
+  const { cleaners } = useAdmin();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredCleaners = cleaners.filter(c =>
@@ -18,11 +18,6 @@ export function CleanerManagementSection() {
 
   const verifiedCleaners = cleaners.filter(c => c.verificationStatus === 'verified').length;
   const pendingCleaners = cleaners.filter(c => c.verificationStatus === 'pending').length;
-
-  const handleCleanerOnboarded = async () => {
-    setShowOnboardingModal(false);
-    await refreshData();
-  };
 
   return (
     <div className="space-y-6">
@@ -53,7 +48,7 @@ export function CleanerManagementSection() {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Cleaners</h2>
           <Button
-            onClick={() => setShowOnboardingModal(true)}
+            onClick={() => navigate('/admin/cleaners/onboard')}
           >
             + Onboard Cleaner
           </Button>
@@ -135,14 +130,6 @@ export function CleanerManagementSection() {
           </div>
         )}
       </Card>
-
-      {/* Onboarding Modal */}
-      {showOnboardingModal && (
-        <CleanerOnboardingModal
-          onClose={() => setShowOnboardingModal(false)}
-          onSuccess={handleCleanerOnboarded}
-        />
-      )}
     </div>
   );
 }
