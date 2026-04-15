@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { DebugPanel } from '../../components/common/DebugPanel';
 import { useBooking } from '../../context/BookingContext';
 
 export function ConfirmationPending() {
   const { bookingId, formData, pricing } = useBooking();
 
   return (
-    <main className="bg-white">
-      <div className="max-w-2xl mx-auto px-6 py-12">
+    <>
+      <DebugPanel />
+      <main className="bg-white">
+        <div className="max-w-2xl mx-auto px-6 py-12">
         {/* Success State */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-accent-100 to-green-100 rounded-full mb-6">
@@ -133,7 +136,8 @@ export function ConfirmationPending() {
         <div className="text-center mt-8 text-sm text-slate-600">
           <p>Questions? Call <a href="tel:01604123456" className="font-semibold text-brand-600 hover:text-brand-700">01604 123 456</a> or email hello@tydl.com</p>
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }

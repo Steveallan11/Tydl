@@ -11,6 +11,23 @@ export function DebugPanel() {
   const [isOpen, setIsOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
 
+  // Restore logs from localStorage on mount
+  useEffect(() => {
+    const savedLogs = localStorage.getItem('debug_logs');
+    if (savedLogs) {
+      try {
+        setLogs(JSON.parse(savedLogs));
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+  }, []);
+
+  // Save logs to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('debug_logs', JSON.stringify(logs));
+  }, [logs]);
+
   useEffect(() => {
     // Capture console.log
     const originalLog = console.log;
