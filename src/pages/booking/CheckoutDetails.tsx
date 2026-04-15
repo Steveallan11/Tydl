@@ -12,6 +12,11 @@ import { validateDiscountCode, useDiscountCode } from '../../lib/email';
 export function CheckoutDetails() {
   const navigate = useNavigate();
   const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
+  const { customer, refreshCustomer } = useCustomerAuth();
+
+export function CheckoutDetails() {
+  const navigate = useNavigate();
+  const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
   const { customer } = useCustomerAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [discountCode, setDiscountCode] = useState('');
@@ -100,6 +105,15 @@ export function CheckoutDetails() {
       await submitBooking(customer.id);
 
       console.log('[CheckoutDetails] Booking submitted successfully, hiding payment form');
+
+      // Refresh customer data to reflect saved address for future bookings
+      try {
+        await refreshCustomer();
+        console.log('[CheckoutDetails] Customer profile refreshed with updated address');
+      } catch (refreshError) {
+        console.error('[CheckoutDetails] Failed to refresh customer profile:', refreshError);
+        // Don't block on this error - booking is already successful
+      }
 
       // Mark discount code as used if applied
       if (discountApplied) {
