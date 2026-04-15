@@ -33,7 +33,8 @@ export function StripePaymentForm({
       try {
         const stripeInstance = await getStripe();
         if (!stripeInstance) {
-          setError('Stripe is not configured. Please try again later.');
+          setError('Stripe payment processing is not available. Please check back later or contact support.');
+          console.warn('[StripePaymentForm] Stripe instance is null - keys may not be configured');
           setIsLoading(false);
           return;
         }
@@ -41,6 +42,7 @@ export function StripePaymentForm({
         setStripe(stripeInstance);
         setIsLoading(false);
       } catch (err: any) {
+        console.error('[StripePaymentForm] Initialization error:', err);
         setError(err.message || 'Failed to initialize Stripe');
         setIsLoading(false);
       }

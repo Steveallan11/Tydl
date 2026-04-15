@@ -1,7 +1,15 @@
 import { supabase } from './supabase';
 import { loadStripe } from '@stripe/stripe-js';
 
+// Debug: Log environment variables
+console.log('[Stripe Init] VITE_STRIPE_PUBLIC_KEY:', import.meta.env.VITE_STRIPE_PUBLIC_KEY ? '✓ Set' : '✗ Missing');
+
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+if (!STRIPE_PUBLIC_KEY) {
+  console.warn('[Stripe] ⚠️ Stripe public key not configured in environment variables');
+  console.warn('[Stripe] Expected VITE_STRIPE_PUBLIC_KEY in .env.local');
+}
 
 interface PaymentIntent {
   id: string;
