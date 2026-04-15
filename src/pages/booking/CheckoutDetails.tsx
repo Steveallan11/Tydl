@@ -68,10 +68,14 @@ export function CheckoutDetails() {
     }
 
     // Show payment form instead of direct submission
+    setPaymentError('');
     setShowPaymentForm(true);
+    console.log('[CheckoutDetails] Showing payment form');
   };
 
   const handlePaymentSuccess = async (paymentIntentId: string) => {
+    console.log('[CheckoutDetails] Payment successful:', paymentIntentId);
+
     if (!customer?.id) {
       setPaymentError('No customer ID found');
       return;
@@ -81,8 +85,11 @@ export function CheckoutDetails() {
       setPaymentProcessing(true);
       setPaymentError('');
 
+      console.log('[CheckoutDetails] Submitting booking for customer:', customer.id);
       // Submit booking after successful payment
       await submitBooking(customer.id);
+
+      console.log('[CheckoutDetails] Booking submitted successfully');
 
       // Mark discount code as used if applied
       if (discountApplied) {
@@ -90,10 +97,11 @@ export function CheckoutDetails() {
       }
 
       // Navigate to confirmation after successful submission
+      console.log('[CheckoutDetails] Navigating to confirmation');
       navigate('/book/confirmation');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Booking submission failed:', error);
-      setPaymentError('Booking submission failed. Please try again.');
+      setPaymentError(error.message || 'Booking submission failed. Please try again.');
     } finally {
       setPaymentProcessing(false);
     }
