@@ -98,7 +98,6 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         scheduled_date: formData.scheduledDate!,
         scheduled_time: formData.scheduledTime!,
         customer_notes: formData.customerNotes,
-        needs_before_after_images: formData.needsBeforeAfterImages || false,
       });
 
       setBookingId(booking.id);

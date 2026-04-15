@@ -330,7 +330,6 @@ export async function createBooking(bookingData: {
   scheduled_date: string;
   scheduled_time: string;
   customer_notes?: string;
-  needs_before_after_images?: boolean;
 }) {
   const { data, error } = await supabase
     .from('bookings')
