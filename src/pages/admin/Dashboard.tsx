@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { useAdmin } from '../../context/AdminContext';
 import { useAuth } from '../../context/AuthContext';
+import { CleanerManagementSection } from '../../components/admin/CleanerManagementSection';
 
 const StatCard = ({
   label,
@@ -44,38 +46,110 @@ const StatCard = ({
   );
 };
 
+type TabType = 'overview' | 'cleaners';
+
 export function AdminDashboard() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { stats, bookings, cleaners, setStatusFilter } = useAdmin();
+  const { stats, bookings, cleaners, setStatusFilter, isLoading, error, refreshData } = useAdmin();
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   // Get pending bookings
   const pendingBookings = bookings.filter(b => b.status === 'pending').slice(0, 5);
 
+  console.log('[AdminDashboard] Render state:', {
+    isLoading,
+    error,
+    totalBookings: bookings.length,
+    pendingBookings: pendingBookings.length,
+    cleaners: cleaners.length,
+    activeTab,
+  });
+
   return (
     <main className="bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start justify-between">
+              <p className="text-red-700">{error}</p>
+              <button
+                onClick={refreshData}
+                className="ml-4 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-blue-700">Loading dashboard data...</p>
+          </div>
+        )}
+
         {/* Header with Logout */}
         <div className="mb-12 flex items-start justify-between">
           <div>
             <h1 className="text-4xl font-bold text-slate-900 mb-2">Admin Dashboard</h1>
             <p className="text-lg text-slate-600">Manage bookings and assign cleaners</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-slate-600 mb-2">Logged in as <strong>{user?.email}</strong></p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                logout();
-                navigate('/admin/login');
-              }}
-            >
-              Logout
-            </Button>
+          <div className="text-right space-y-2">
+            <p className="text-sm text-slate-600">Logged in as <strong>{user?.email}</strong></p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={refreshData}
+              >
+                🔄 Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  logout();
+                  navigate('/admin/login');
+                }}
+              >
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="mb-12 border-b border-slate-200">
+          <div className="flex gap-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`py-4 px-2 font-medium border-b-2 transition-colors ${
+                activeTab === 'overview'
+                  ? 'border-brand-600 text-brand-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              📊 Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('cleaners')}
+              className={`py-4 px-2 font-medium border-b-2 transition-colors ${
+                activeTab === 'cleaners'
+                  ? 'border-brand-600 text-brand-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              👥 Cleaners
+            </button>
+          </div>
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <>
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <StatCard
@@ -238,6 +312,13 @@ export function AdminDashboard() {
             </div>
           )}
         </Card>
+          </>
+        )}
+
+        {/* Cleaners Tab */}
+        {activeTab === 'cleaners' && (
+          <CleanerManagementSection />
+        )}
       </div>
     </main>
   );

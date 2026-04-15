@@ -119,8 +119,20 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         addOns: booking.add_ons || booking.addOns,
       })) || [];
 
+      // Transform cleaners to flatten data and convert snake_case to camelCase
+      const transformedCleaners = (cleanersData as any[])?.map((cleaner: any) => ({
+        ...cleaner,
+        firstName: cleaner.first_name || cleaner.firstName,
+        lastName: cleaner.last_name || cleaner.lastName,
+        verificationStatus: cleaner.verification_status || cleaner.verificationStatus,
+        jobsCompleted: cleaner.jobs_completed || cleaner.jobsCompleted || 0,
+        currentJobId: cleaner.current_job_id || cleaner.currentJobId,
+        createdAt: cleaner.created_at || cleaner.createdAt,
+        updatedAt: cleaner.updated_at || cleaner.updatedAt,
+      })) || [];
+
       setBookings(transformedBookings as any);
-      setCleaners(cleanersData as any);
+      setCleaners(transformedCleaners as any);
       setJobFinancials(financialsData as any);
       setPendingPayouts(pendingPayoutsData as any);
       setApprovedPayouts(approvedPayoutsData as any);
