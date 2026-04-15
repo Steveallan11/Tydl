@@ -77,7 +77,9 @@ export function CheckoutDetails() {
     console.log('[CheckoutDetails] Payment successful:', paymentIntentId);
 
     if (!customer?.id) {
+      console.error('[CheckoutDetails] No customer ID found');
       setPaymentError('No customer ID found');
+      setShowPaymentForm(true);
       return;
     }
 
@@ -86,6 +88,12 @@ export function CheckoutDetails() {
       setPaymentError('');
 
       console.log('[CheckoutDetails] Submitting booking for customer:', customer.id);
+      console.log('[CheckoutDetails] Booking data:', {
+        serviceType: formData.serviceType,
+        propertySize: formData.propertySize,
+        totalPrice: pricing.totalPrice,
+      });
+
       // Submit booking after successful payment
       await submitBooking(customer.id);
 
@@ -98,10 +106,12 @@ export function CheckoutDetails() {
 
       // Navigate to confirmation after successful submission
       console.log('[CheckoutDetails] Navigating to confirmation');
-      navigate('/book/confirmation');
+      setTimeout(() => navigate('/book/confirmation'), 100);
     } catch (error: any) {
-      console.error('Booking submission failed:', error);
-      setPaymentError(error.message || 'Booking submission failed. Please try again.');
+      console.error('[CheckoutDetails] Booking submission failed:', error);
+      const errorMsg = error.message || error.toString() || 'Booking submission failed. Please try again.';
+      setPaymentError(errorMsg);
+      setShowPaymentForm(true);
     } finally {
       setPaymentProcessing(false);
     }
@@ -301,13 +311,19 @@ export function CheckoutDetails() {
                   <p className="text-red-700">{paymentError}</p>
                 </div>
               )}
-              <StripePaymentForm
-                amount={Math.round(pricing.totalPrice * (1 - (discountApplied?.percentage || 0) / 100) * 100)}
-                bookingId={bookingId || 'temp'}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                isProcessing={paymentProcessing}
-              />
+              {(() => {
+                const paymentAmount = Math.round(pricing.totalPrice * (1 - (discountApplied?.percentage || 0) / 100) * 100);
+                console.log('[CheckoutDetails] Payment form - Total price:', pricing.totalPrice, 'Discount:', discountApplied?.percentage, 'Final amount:', paymentAmount);
+                return (
+                  <StripePaymentForm
+                    amount={paymentAmount}
+                    bookingId={bookingId || 'pending'}
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                    isProcessing={paymentProcessing}
+                  />
+                );
+              })()}
             </div>
           )}
 
