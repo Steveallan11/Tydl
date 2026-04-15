@@ -448,14 +448,27 @@ export async function assignCleanerToBooking(
 // ============================================================================
 
 export async function getCleaners(verification_status = 'verified') {
-  const { data, error } = await supabase
-    .from('cleaners')
-    .select('*')
-    .eq('verification_status', verification_status)
-    .order('rating', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('cleaners')
+      .select('*')
+      .eq('verification_status', verification_status)
+      .order('rating', { ascending: false });
 
-  if (error) throw error;
-  return data;
+    // If permission denied (406), return empty array instead of throwing
+    if (error) {
+      if (error.code === '406' || error.status === 406) {
+        console.warn('[getCleaners] Permission denied - user may not be admin');
+        return [];
+      }
+      throw error;
+    }
+    return data || [];
+  } catch (error: any) {
+    console.error('Error getting cleaners:', error);
+    // Return empty array on error instead of throwing to prevent page crash
+    return [];
+  }
 }
 
 export async function getCleanerById(cleanerId: string) {
