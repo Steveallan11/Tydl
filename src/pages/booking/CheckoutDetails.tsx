@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
+import { DebugPanel } from '../../components/common/DebugPanel';
 import { useBooking } from '../../context/BookingContext';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { validateBookingStep } from '../../lib/validation';
@@ -132,8 +133,10 @@ export function CheckoutDetails() {
 
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-12">
-      <StepIndicator currentStep={8} totalSteps={9} />
+    <>
+      <DebugPanel />
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <StepIndicator currentStep={8} totalSteps={9} />
 
       <Card>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Confirm Your Details</h1>
@@ -403,5 +406,6 @@ export function CheckoutDetails() {
         </form>
       </Card>
     </div>
+    </>
   );
 }
