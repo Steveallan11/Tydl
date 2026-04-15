@@ -46,8 +46,13 @@ export function CheckoutDetails() {
       return;
     }
 
+    if (!customer?.id) {
+      console.error('No customer ID found');
+      return;
+    }
+
     try {
-      await submitBooking();
+      await submitBooking(customer.id);
       // Navigate to confirmation after successful submission
       navigate('/book/confirmation');
     } catch (error) {

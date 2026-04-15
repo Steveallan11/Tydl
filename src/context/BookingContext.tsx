@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { BookingFormData } from '../types/booking';
 import { calculatePricing, PricingBreakdown } from '../lib/pricing';
-import { createBooking, getCurrentCustomer } from '../lib/supabase';
+import { createBooking } from '../lib/supabase';
 
 interface BookingContextType {
   // Form data
@@ -20,7 +20,7 @@ interface BookingContextType {
 
   // Booking submission
   isSubmitting: boolean;
-  submitBooking: () => Promise<void>;
+  submitBooking: (customerId: string) => Promise<void>;
   bookingId?: string;
 }
 
@@ -72,18 +72,17 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const submitBooking = async () => {
+  const submitBooking = async (customerId: string) => {
     setIsSubmitting(true);
     try {
-      // Get current customer
-      const currentCustomer = await getCurrentCustomer();
-      if (!currentCustomer?.customer?.id) {
+      // Use the customer ID passed from the auth context
+      if (!customerId) {
         throw new Error('No customer logged in');
       }
 
       // Create booking in database
       const booking = await createBooking({
-        customer_id: currentCustomer.customer.id,
+        customer_id: customerId,
         service_type: formData.serviceType!,
         property_size: formData.propertySize!,
         supplies: formData.supplies || 'platform',
