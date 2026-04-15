@@ -99,7 +99,27 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         getPayoutsByStatus('approved'),
       ]);
 
-      setBookings(bookingsData as any);
+      // Transform bookings to flatten customer data from Supabase relations
+      const transformedBookings = (bookingsData as any[])?.map((booking: any) => ({
+        ...booking,
+        // Flatten customer data from nested relation
+        firstName: booking.customer?.first_name || booking.firstName,
+        lastName: booking.customer?.last_name || booking.lastName,
+        email: booking.customer?.email || booking.email,
+        phone: booking.customer?.phone || booking.phone,
+        // Keep original camelCase service_type as serviceType for compatibility
+        serviceType: booking.service_type || booking.serviceType,
+        propertySize: booking.property_size || booking.propertySize,
+        assignedCleanerId: booking.cleaner_id || booking.assignedCleanerId,
+        scheduledDate: booking.scheduled_date || booking.scheduledDate,
+        scheduledTime: booking.scheduled_time || booking.scheduledTime,
+        totalPrice: booking.total_price || booking.totalPrice,
+        customerId: booking.customer_id || booking.customerId,
+        customerNotes: booking.customer_notes || booking.customerNotes,
+        addOns: booking.add_ons || booking.addOns,
+      })) || [];
+
+      setBookings(transformedBookings as any);
       setCleaners(cleanersData as any);
       setJobFinancials(financialsData as any);
       setPendingPayouts(pendingPayoutsData as any);
@@ -108,7 +128,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       // Calculate additional stats
       const pendingPayments = (financialsData as any[])?.filter((f: any) => f.payment_status === 'pending').reduce((sum: number, f: any) => sum + f.customer_payment, 0) || 0;
       const platformFees = (financialsData as any[])?.reduce((sum: number, f: any) => sum + f.platform_fee, 0) || 0;
-      const avgValue = (bookingsData as any[])?.length > 0 ? (statsData as any).totalRevenue / (bookingsData as any[]).length : 0;
+      const avgValue = transformedBookings?.length > 0 ? (statsData as any).totalRevenue / transformedBookings.length : 0;
 
       setStats({
         ...statsData as any,
