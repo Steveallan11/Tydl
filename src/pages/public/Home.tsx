@@ -4,9 +4,13 @@ import { Button } from '../../components/common/Button';
 import { SERVICES } from '../../lib/constants';
 import { useEffect, useState } from 'react';
 import { ScrollIndicator, useIntersectionAnimation, AnimatedCounter } from '../../hooks/useInteractions';
+import { generateDiscountCode, saveDiscountCode, sendDiscountCodeEmail } from '../../lib/email';
 
 export function Home() {
   const [scrolled, setScrolled] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [newsletterMessage, setNewsletterMessage] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,6 +19,37 @@ export function Home() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewsletterStatus('loading');
+    setNewsletterMessage('');
+
+    try {
+      // Validate email
+      if (!newsletterEmail || !newsletterEmail.includes('@')) {
+        throw new Error('Please enter a valid email');
+      }
+
+      // Generate discount code
+      const discountCode = generateDiscountCode();
+
+      // Save to storage
+      await saveDiscountCode(newsletterEmail, discountCode, 10);
+
+      // Send email
+      await sendDiscountCodeEmail(newsletterEmail, discountCode, 10);
+
+      setNewsletterStatus('success');
+      setNewsletterMessage(`✓ Check your email! Your code ${discountCode} is ready.`);
+      setNewsletterEmail('');
+    } catch (error: any) {
+      setNewsletterStatus('error');
+      setNewsletterMessage(error.message || 'Something went wrong. Please try again.');
+    } finally {
+      setTimeout(() => setNewsletterStatus('idle'), 5000);
+    }
+  };
 
   return (
     <main className="bg-white overflow-hidden">
@@ -287,7 +322,7 @@ export function Home() {
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="mb-20 animate-fade-in-up">
             <h2 className="text-5xl font-bold mb-4">
-              How Tydl <span className="bg-gradient-to-r from-brand-400 to-blue-400 bg-clip-text text-transparent">Works</span>
+              How Tydl <span className="text-white">Works</span>
             </h2>
             <p className="text-xl text-slate-300">From booking to clean in 4 simple steps</p>
           </div>
@@ -484,16 +519,30 @@ export function Home() {
           <p className="text-blue-100 mb-8 text-lg animate-fade-in-up" style={{animationDelay: '0.1s'}}>
             Join 500+ busy Northamptonshire people who clean smarter.
           </p>
-          <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto animate-fade-in-up" style={{animationDelay: '0.2s'}}>
             <input
               type="email"
               placeholder="your@email.com"
-              className="flex-1 px-6 py-4 rounded-xl border-0 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-brand-600 outline-none font-medium"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              disabled={newsletterStatus === 'loading'}
+              className="flex-1 px-6 py-4 rounded-xl border-0 text-slate-900 placeholder-slate-500 focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-brand-600 outline-none font-medium disabled:opacity-50"
             />
-            <button type="submit" className="px-6 py-4 bg-white text-brand-600 font-bold rounded-xl hover:bg-slate-100 transition-all duration-300 whitespace-nowrap hover:shadow-xl active:scale-95">
-              Get 10% Off
+            <button
+              type="submit"
+              disabled={newsletterStatus === 'loading'}
+              className="px-6 py-4 bg-white text-brand-600 font-bold rounded-xl hover:bg-slate-100 transition-all duration-300 whitespace-nowrap hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {newsletterStatus === 'loading' ? 'Sending...' : 'Get 10% Off'}
             </button>
           </form>
+          {newsletterMessage && (
+            <p className={`mt-4 text-sm font-medium ${
+              newsletterStatus === 'success' ? 'text-green-100' : 'text-red-100'
+            }`}>
+              {newsletterMessage}
+            </p>
+          )}
         </div>
       </section>
 

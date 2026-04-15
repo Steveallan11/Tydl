@@ -36,6 +36,7 @@ import { Account } from './pages/customer/Account';
 import { AdminLogin } from './pages/admin/Login';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import { BookingBoard } from './pages/admin/BookingBoard';
+import { CleanerManagement } from './pages/admin/CleanerManagement';
 
 // Cleaner pages
 import { CleanerOnboarding } from './pages/cleaner/Onboarding';
@@ -95,6 +96,16 @@ export function App() {
                     <ProtectedRoute>
                       <AdminProvider>
                         <BookingBoard />
+                      </AdminProvider>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/cleaners"
+                  element={
+                    <ProtectedRoute>
+                      <AdminProvider>
+                        <CleanerManagement />
                       </AdminProvider>
                     </ProtectedRoute>
                   }

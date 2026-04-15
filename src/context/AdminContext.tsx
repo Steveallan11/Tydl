@@ -7,7 +7,13 @@ import {
   assignCleanerToBooking as assignCleanerToBookingSupabase,
   updateBookingStatus as updateBookingStatusSupabase,
   getDashboardStats,
+  getAllJobFinancials,
+  getPayoutsByStatus,
+  saveCleanerBankDetails,
+  saveCleanerPayoutSettings,
+  logAdminActivity,
 } from '../lib/supabase';
+import { JobFinancials, CleanerPayout } from '../types/payments';
 
 export interface DashboardStats {
   totalBookings: number;
@@ -19,6 +25,10 @@ export interface DashboardStats {
   totalCleaners: number;
   verifiedCleaners: number;
   totalRevenue: number;
+  pendingPayments: number;
+  pendingPayouts: number;
+  platformMargin: number;
+  averageJobValue: number;
 }
 
 interface AdminContextType {
@@ -26,6 +36,9 @@ interface AdminContextType {
   bookings: Booking[];
   cleaners: Cleaner[];
   stats: DashboardStats;
+  jobFinancials: JobFinancials[];
+  pendingPayouts: CleanerPayout[];
+  approvedPayouts: CleanerPayout[];
 
   // Filters
   statusFilter: BookingStatus | 'all';
@@ -35,6 +48,7 @@ interface AdminContextType {
   assignCleaner: (bookingId: string, cleanerId: string) => Promise<boolean>;
   updateStatus: (bookingId: string, status: BookingStatus) => Promise<boolean>;
   getAvailableCleaners: (postcode: string) => Cleaner[];
+  onboardCleaner: (cleanerData: any) => Promise<boolean>;
   refreshData: () => Promise<void>;
 
   // UI State
@@ -42,6 +56,7 @@ interface AdminContextType {
   error: string | null;
   selectedBookingId: string | null;
   setSelectedBookingId: (id: string | null) => void;
+  adminId?: string;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -49,6 +64,10 @@ const AdminContext = createContext<AdminContextType | undefined>(undefined);
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [jobFinancials, setJobFinancials] = useState<JobFinancials[]>([]);
+  const [pendingPayouts, setPendingPayouts] = useState<CleanerPayout[]>([]);
+  const [approvedPayouts, setApprovedPayouts] = useState<CleanerPayout[]>([]);
+  const [adminId, setAdminId] = useState<string>();
   const [stats, setStats] = useState<DashboardStats>({
     totalBookings: 0,
     pendingBookings: 0,
@@ -58,6 +77,10 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     totalCleaners: 0,
     verifiedCleaners: 0,
     totalRevenue: 0,
+    pendingPayments: 0,
+    pendingPayouts: 0,
+    platformMargin: 0,
+    averageJobValue: 0,
   });
   const [statusFilter, setStatusFilter] = useState<BookingStatus | 'all'>('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -67,15 +90,33 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const refreshData = async () => {
     try {
       setError(null);
-      const [bookingsData, cleanersData, statsData] = await Promise.all([
+      const [bookingsData, cleanersData, statsData, financialsData, pendingPayoutsData, approvedPayoutsData] = await Promise.all([
         getBookings(),
         getCleaners(),
         getDashboardStats(),
+        getAllJobFinancials(),
+        getPayoutsByStatus('pending'),
+        getPayoutsByStatus('approved'),
       ]);
 
       setBookings(bookingsData as any);
       setCleaners(cleanersData as any);
-      setStats(statsData as any);
+      setJobFinancials(financialsData as any);
+      setPendingPayouts(pendingPayoutsData as any);
+      setApprovedPayouts(approvedPayoutsData as any);
+
+      // Calculate additional stats
+      const pendingPayments = (financialsData as any[])?.filter((f: any) => f.payment_status === 'pending').reduce((sum: number, f: any) => sum + f.customer_payment, 0) || 0;
+      const platformFees = (financialsData as any[])?.reduce((sum: number, f: any) => sum + f.platform_fee, 0) || 0;
+      const avgValue = (bookingsData as any[])?.length > 0 ? (statsData as any).totalRevenue / (bookingsData as any[]).length : 0;
+
+      setStats({
+        ...statsData as any,
+        pendingPayments,
+        pendingPayouts: (pendingPayoutsData as any[])?.reduce((sum: number, p: any) => sum + p.total_amount, 0) || 0,
+        platformMargin: platformFees,
+        averageJobValue: avgValue,
+      });
     } catch (err: any) {
       setError(err.message || 'Failed to load data');
       console.error('Error refreshing admin data:', err);
@@ -126,6 +167,53 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const onboardCleaner = async (cleanerData: any): Promise<boolean> => {
+    try {
+      setError(null);
+
+      // Save bank details
+      if (cleanerData.cleanerId) {
+        await saveCleanerBankDetails(cleanerData.cleanerId, {
+          account_holder_name: cleanerData.accountHolderName,
+          sort_code: cleanerData.sortCode,
+          account_number: cleanerData.accountNumber,
+        });
+
+        // Save payout settings
+        await saveCleanerPayoutSettings(cleanerData.cleanerId, {
+          compensation_type: cleanerData.compensationType,
+          flat_rate_per_job: cleanerData.flatRatePerJob,
+          hourly_rate: cleanerData.hourlyRate,
+          percentage_of_revenue: cleanerData.percentageOfRevenue,
+          payout_frequency: cleanerData.payoutFrequency,
+          minimum_payout: cleanerData.minimumPayout,
+        });
+
+        // Log activity
+        if (adminId) {
+          await logAdminActivity(
+            adminId,
+            'onboard_cleaner',
+            'cleaner',
+            cleanerData.cleanerId,
+            {},
+            {
+              compensation_type: cleanerData.compensationType,
+              payout_frequency: cleanerData.payoutFrequency,
+            }
+          );
+        }
+      }
+
+      await refreshData();
+      return true;
+    } catch (err: any) {
+      setError(err.message || 'Failed to onboard cleaner');
+      console.error('Error onboarding cleaner:', err);
+      return false;
+    }
+  };
+
   // Filter bookings by status
   const filteredBookings = statusFilter === 'all'
     ? bookings
@@ -140,11 +228,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     assignCleaner,
     updateStatus,
     getAvailableCleaners,
+    onboardCleaner,
     refreshData,
     isLoading,
     error,
     selectedBookingId,
     setSelectedBookingId,
+    jobFinancials,
+    pendingPayouts,
+    approvedPayouts,
+    adminId,
   };
 
   return (
