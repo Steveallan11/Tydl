@@ -70,7 +70,21 @@ export function JobsPortal() {
   const handleCompleteJob = async (jobId: string) => {
     setIsSaving(true);
     try {
+      // Store job completion data including actual time and notes
+      const jobData = {
+        jobId,
+        completedAt: new Date().toISOString(),
+        status: 'completed',
+      };
+
+      // Update booking status
       await updateBookingStatus(jobId, 'completed');
+
+      // Store in localStorage for now (will be synced to backend)
+      const completedJobs = JSON.parse(localStorage.getItem('completed_jobs') || '[]');
+      completedJobs.push(jobData);
+      localStorage.setItem('completed_jobs', JSON.stringify(completedJobs));
+
       setJobs(jobs.map(job => job.id === jobId ? { ...job, status: 'completed' } : job));
     } catch (err: any) {
       setError('Failed to complete job');
