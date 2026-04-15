@@ -211,8 +211,14 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const onboardCleaner = async (cleanerData: any): Promise<boolean> => {
     try {
       setError(null);
+      console.log('[onboardCleaner] Starting cleaner onboarding with data:', {
+        email: cleanerData.email,
+        firstName: cleanerData.firstName,
+        lastName: cleanerData.lastName,
+      });
 
       // Step 1: Create cleaner record
+      console.log('[onboardCleaner] Creating cleaner record...');
       const newCleaner = await createCleanerAdmin({
         email: cleanerData.email,
         first_name: cleanerData.firstName,
@@ -221,6 +227,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         postcode: cleanerData.postcode,
       });
 
+      console.log('[onboardCleaner] Cleaner created successfully:', newCleaner.id);
+
       if (!newCleaner.id) {
         throw new Error('Failed to create cleaner record');
       }
@@ -228,13 +236,16 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       const cleanerId = newCleaner.id;
 
       // Step 2: Save bank details
+      console.log('[onboardCleaner] Saving bank details for cleaner:', cleanerId);
       await saveCleanerBankDetails(cleanerId, {
         account_holder_name: cleanerData.accountHolderName,
         sort_code: cleanerData.sortCode,
         account_number: cleanerData.accountNumber,
       });
+      console.log('[onboardCleaner] Bank details saved');
 
       // Step 3: Save payout settings
+      console.log('[onboardCleaner] Saving payout settings...');
       await saveCleanerPayoutSettings(cleanerId, {
         compensation_type: cleanerData.compensationType,
         flat_rate_per_job: cleanerData.flatRatePerJob,
@@ -243,9 +254,11 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         payout_frequency: cleanerData.payoutFrequency,
         minimum_payout: cleanerData.minimumPayout,
       });
+      console.log('[onboardCleaner] Payout settings saved');
 
       // Step 4: Log activity
       if (adminId) {
+        console.log('[onboardCleaner] Logging admin activity...');
         await logAdminActivity(
           adminId,
           'onboard_cleaner',
@@ -260,11 +273,19 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
+      console.log('[onboardCleaner] Refreshing admin data...');
       await refreshData();
+      console.log('[onboardCleaner] Cleaner onboarding completed successfully!');
       return true;
     } catch (err: any) {
-      setError(err.message || 'Failed to onboard cleaner');
-      console.error('Error onboarding cleaner:', err);
+      const errorMsg = err.message || 'Failed to onboard cleaner';
+      setError(errorMsg);
+      console.error('[onboardCleaner] Error:', {
+        message: errorMsg,
+        code: err.code,
+        details: err.details,
+        stack: err.stack,
+      });
       return false;
     }
   };

@@ -144,6 +144,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       // Send confirmation email
       if (formData.email && formData.firstName && formData.lastName) {
         try {
+          console.log('[submitBooking] Sending confirmation email to:', formData.email);
           await sendBookingConfirmationEmail(formData.email, formData.firstName, {
             bookingId: booking.id,
             serviceType: formData.serviceType || 'cleaning',
@@ -151,8 +152,10 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             scheduledTime: formData.scheduledTime || '09:00',
             totalPrice: pricing.totalPrice,
           });
+          console.log('[submitBooking] Confirmation email sent successfully');
 
           // Also send in-app notification
+          console.log('[submitBooking] Sending in-app notification...');
           await sendNotification(
             customerId,
             'customer',
@@ -162,8 +165,12 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             { bookingId: booking.id },
             'in-app'
           );
-        } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError);
+          console.log('[submitBooking] In-app notification sent');
+        } catch (emailError: any) {
+          console.error('[submitBooking] Error sending confirmation:', {
+            message: emailError.message,
+            code: emailError.code,
+          });
           // Don't block booking if email fails
         }
       }
