@@ -117,7 +117,7 @@ export function StripePaymentForm({
             <input
               type="text"
               placeholder="4242 4242 4242 4242"
-              maxLength="19"
+              maxLength={19}
               className="w-full outline-none text-slate-900"
               defaultValue="4242 4242 4242 4242"
               readOnly
@@ -135,7 +135,7 @@ export function StripePaymentForm({
             <input
               type="text"
               placeholder="MM/YY"
-              maxLength="5"
+              maxLength={5}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
             />
           </div>
@@ -146,7 +146,7 @@ export function StripePaymentForm({
             <input
               type="text"
               placeholder="123"
-              maxLength="3"
+              maxLength={3}
               className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
             />
           </div>

@@ -98,7 +98,7 @@ export function AddOns() {
                     {pricing.details.addOns.map((addon) => (
                       <div key={addon.name} className="flex justify-between text-slate-600 mb-1">
                         <span>{addon.name}</span>
-                        <span className="font-mono">+£{addon.price}</span>
+                        <span className="font-mono">+£{addon.customerPrice}</span>
                       </div>
                     ))}
                   </div>

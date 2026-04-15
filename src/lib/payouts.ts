@@ -219,15 +219,18 @@ export async function generateTransferList(payoutIds: string[]) {
     if (error) throw error;
 
     // Format as transfer CSV
-    const transfers = payouts?.map(payout => ({
-      cleanerName: `${payout.cleaner.first_name} ${payout.cleaner.last_name}`,
-      amount: payout.total_amount,
-      sortCode: payout.cleaner_bank_details?.[0]?.sort_code || '',
-      accountNumber: payout.cleaner_bank_details?.[0]?.account_number || '',
-      accountHolder: payout.cleaner_bank_details?.[0]?.account_holder_name || '',
-      reference: `TYDL-${payout.id.slice(0, 8).toUpperCase()}`,
-      period: `${payout.payout_period_start} to ${payout.payout_period_end}`,
-    })) || [];
+    const transfers = payouts?.map((payout: any) => {
+      const bankDetails = Array.isArray(payout.cleaner_bank_details) ? payout.cleaner_bank_details[0] : payout.cleaner_bank_details;
+      return {
+        cleanerName: `${payout.cleaner.first_name} ${payout.cleaner.last_name}`,
+        amount: payout.total_amount,
+        sortCode: bankDetails?.sort_code || '',
+        accountNumber: bankDetails?.account_number || '',
+        accountHolder: bankDetails?.account_holder_name || '',
+        reference: `TYDL-${payout.id.slice(0, 8).toUpperCase()}`,
+        period: `${payout.payout_period_start} to ${payout.payout_period_end}`,
+      };
+    }) || [];
 
     return transfers;
   } catch (error: any) {

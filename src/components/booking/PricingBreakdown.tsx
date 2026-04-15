@@ -50,7 +50,7 @@ export function PricingBreakdownComponent({ pricing, compact = false }: PricingB
             {details.addOns.map((addon) => (
               <div key={addon.name} className="flex justify-between items-center text-slate-600">
                 <span className="text-sm">{addon.name}</span>
-                <span className="font-mono text-sm">+£{addon.price}</span>
+                <span className="font-mono text-sm">+£{addon.customerPrice}</span>
               </div>
             ))}
           </div>
