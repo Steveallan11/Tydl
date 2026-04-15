@@ -95,15 +95,15 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Scheduled time is required');
       }
 
-      // Normalize service type: convert hyphens to underscores for database
-      const normalizedServiceType = formData.serviceType.replace(/-/g, '_');
-      const normalizedPropertySize = formData.propertySize.replace(/-/g, '_');
-      const normalizedFrequency = (formData.frequency || 'once').replace(/-/g, '_');
+      // Use values as-is (database expects hyphenated format like 'two-bed', 'one-off-clean', etc)
+      const serviceType = formData.serviceType;
+      const propertySize = formData.propertySize;
+      const frequency = formData.frequency || 'once';
 
-      console.log('[submitBooking] Normalized values:', {
-        serviceType: { original: formData.serviceType, normalized: normalizedServiceType },
-        propertySize: { original: formData.propertySize, normalized: normalizedPropertySize },
-        frequency: { original: formData.frequency, normalized: normalizedFrequency },
+      console.log('[submitBooking] Booking values:', {
+        serviceType,
+        propertySize,
+        frequency,
         supplies: formData.supplies,
         scheduledDate: formData.scheduledDate,
         scheduledTime: formData.scheduledTime,
@@ -112,10 +112,10 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       // Create booking in database
       const booking = await createBooking({
         customer_id: customerId,
-        service_type: normalizedServiceType,
-        property_size: normalizedPropertySize,
+        service_type: serviceType,
+        property_size: propertySize,
         supplies: formData.supplies || 'platform',
-        frequency: normalizedFrequency,
+        frequency: frequency,
         add_ons: formData.addOns || [],
         total_price: pricing.totalPrice,
         scheduled_date: formData.scheduledDate!,
