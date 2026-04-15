@@ -100,18 +100,44 @@ export function StripePaymentForm({
       console.log('[StripePaymentForm] Confirming payment for:', bookingId);
 
       // Validate card inputs
-      if (!cardNumber || cardNumber.length < 15) {
-        throw new Error('Please enter a valid card number');
+      const cleanCardNumber = cardNumber.replace(/\s/g, '');
+      if (!cleanCardNumber || cleanCardNumber.length < 13 || cleanCardNumber.length > 19) {
+        throw new Error('Card number must be 13-19 digits');
       }
-      if (!expiry || !expiry.includes('/')) {
-        throw new Error('Please enter expiry date (MM/YY)');
-      }
-      if (!cvc || cvc.length < 3) {
-        throw new Error('Please enter a valid CVC');
+      if (!cleanCardNumber.match(/^\d+$/)) {
+        throw new Error('Card number must contain only numbers');
       }
 
-      const [month, year] = expiry.split('/');
-      const expYear = 2000 + parseInt(year);
+      if (!expiry || !expiry.includes('/')) {
+        throw new Error('Please enter expiry date in MM/YY format');
+      }
+
+      const expiryParts = expiry.split('/');
+      if (expiryParts.length !== 2) {
+        throw new Error('Expiry date must be in MM/YY format');
+      }
+
+      const expMonth = parseInt(expiryParts[0]);
+      if (isNaN(expMonth) || expMonth < 1 || expMonth > 12) {
+        throw new Error('Expiry month must be between 01 and 12');
+      }
+
+      const expYearStr = expiryParts[1];
+      if (!expYearStr || expYearStr.length !== 2 || !expYearStr.match(/^\d+$/)) {
+        throw new Error('Expiry year must be 2 digits (YY)');
+      }
+
+      const expYear = 2000 + parseInt(expYearStr);
+      if (isNaN(expYear) || expYear < new Date().getFullYear()) {
+        throw new Error('Card has expired');
+      }
+
+      if (!cvc || cvc.length < 3 || cvc.length > 4) {
+        throw new Error('CVC must be 3-4 digits');
+      }
+      if (!cvc.match(/^\d+$/)) {
+        throw new Error('CVC must contain only numbers');
+      }
 
       // Call server-side function to confirm payment
       const session = await supabase.auth.getSession();
@@ -125,8 +151,8 @@ export function StripePaymentForm({
           },
           body: JSON.stringify({
             clientSecret,
-            cardNumber: cardNumber.replace(/\s/g, ''),
-            expMonth: parseInt(month),
+            cardNumber: cleanCardNumber,
+            expMonth,
             expYear,
             cvc,
             email: customerEmail,

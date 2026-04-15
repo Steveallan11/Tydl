@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { useBooking } from '../../context/BookingContext';
 import { ADD_ONS } from '../../lib/constants';
 import { AddOn } from '../../types/booking';
+import { AddOnDescriptionModal } from '../../components/booking/AddOnDescriptionModal';
 
 const addonIcons: Record<AddOn, string> = {
   oven: '🔥',
@@ -18,6 +20,7 @@ const addonIcons: Record<AddOn, string> = {
 export function AddOns() {
   const navigate = useNavigate();
   const { formData, updateFormData, pricing } = useBooking();
+  const [selectedAddOn, setSelectedAddOn] = useState<AddOn | null>(null);
 
   const toggleAddOn = (addon: AddOn) => {
     const current = formData.addOns || [];
@@ -58,7 +61,19 @@ export function AddOns() {
                     />
                     <span className="text-2xl">{addonIcons[key as AddOn]}</span>
                     <div className="flex-1">
-                      <div className="font-bold text-slate-900">{addon.label}</div>
+                      <div className="font-bold text-slate-900 flex items-center gap-2">
+                        {addon.label}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedAddOn(key as AddOn);
+                          }}
+                          className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 rounded px-2 py-1 transition-colors"
+                        >
+                          i
+                        </button>
+                      </div>
                     </div>
                     <div className="text-brand-600 font-semibold font-mono">+£{addon.basePrice}</div>
                   </label>
@@ -116,6 +131,14 @@ export function AddOns() {
           </div>
         </div>
       </div>
+
+      {/* Add-On Description Modal */}
+      {selectedAddOn && (
+        <AddOnDescriptionModal
+          addOn={selectedAddOn}
+          onClose={() => setSelectedAddOn(null)}
+        />
+      )}
     </div>
   );
 }
