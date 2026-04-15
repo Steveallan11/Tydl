@@ -1,0 +1,290 @@
+import { supabase } from './supabase';
+
+const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
+
+interface DiscountCode {
+  code: string;
+  email: string;
+  percentage: number;
+  expiresAt: string;
+  used: boolean;
+  createdAt: string;
+}
+
+/**
+ * Generate a unique discount code
+ */
+export function generateDiscountCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = 'TYDL';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+/**
+ * Save discount code for email newsletter signup
+ */
+export async function saveDiscountCode(email: string, code: string, percentage: number = 10) {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 30); // Code valid for 30 days
+
+  const discountCode: DiscountCode = {
+    code,
+    email,
+    percentage,
+    expiresAt: expiresAt.toISOString(),
+    used: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  // Store in localStorage for MVP
+  const existingCodes = JSON.parse(localStorage.getItem('discount_codes') || '[]');
+  existingCodes.push(discountCode);
+  localStorage.setItem('discount_codes', JSON.stringify(existingCodes));
+
+  return discountCode;
+}
+
+/**
+ * Validate and apply discount code at checkout
+ */
+export function validateDiscountCode(code: string): DiscountCode | null {
+  const allCodes: DiscountCode[] = JSON.parse(localStorage.getItem('discount_codes') || '[]');
+  const discountCode = allCodes.find(c => c.code === code && !c.used);
+
+  if (!discountCode) return null;
+
+  // Check if code is expired
+  const expiresAt = new Date(discountCode.expiresAt);
+  if (new Date() > expiresAt) return null;
+
+  return discountCode;
+}
+
+/**
+ * Mark discount code as used
+ */
+export function useDiscountCode(code: string) {
+  const allCodes: DiscountCode[] = JSON.parse(localStorage.getItem('discount_codes') || '[]');
+  const index = allCodes.findIndex(c => c.code === code);
+
+  if (index !== -1) {
+    allCodes[index].used = true;
+    localStorage.setItem('discount_codes', JSON.stringify(allCodes));
+  }
+}
+
+/**
+ * Send discount code email via Resend
+ */
+export async function sendDiscountCodeEmail(email: string, discountCode: string, percentage: number = 10) {
+  try {
+    if (!RESEND_API_KEY) {
+      console.warn('Resend API key not configured, skipping email');
+      return true; // For MVP, allow to continue without email
+    }
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'noreply@tydl.co.uk',
+        to: email,
+        subject: `Your ${percentage}% Discount Code for Tydl Cleaning 🎉`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+                .container { max-width: 600px; margin: 0 auto; }
+                .header { background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; padding: 40px; text-align: center; }
+                .content { padding: 40px; background: #f5f5f5; }
+                .code-box { background: white; padding: 30px; margin: 20px 0; border-radius: 8px; text-align: center; border: 2px dashed #4f46e5; }
+                .code { font-size: 28px; font-weight: bold; color: #4f46e5; font-family: monospace; letter-spacing: 2px; }
+                .button { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+                .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Welcome to Tydl! 🎉</h1>
+                  <p>Your ${percentage}% discount code is ready</p>
+                </div>
+                <div class="content">
+                  <p>Hi there,</p>
+                  <p>Thanks for signing up! Here's your exclusive ${percentage}% discount code for your first clean.</p>
+
+                  <div class="code-box">
+                    <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Your Discount Code</p>
+                    <div class="code">${discountCode}</div>
+                  </div>
+
+                  <p><strong>How to use:</strong></p>
+                  <ol>
+                    <li>Visit <a href="https://tydl.co.uk/book">tydl.co.uk/book</a></li>
+                    <li>Complete your booking</li>
+                    <li>Enter the code at checkout</li>
+                    <li>Enjoy your ${percentage}% discount! 💚</li>
+                  </ol>
+
+                  <p style="color: #666; font-size: 12px;">Valid for 30 days from today. One-time use only.</p>
+
+                  <a href="https://tydl.co.uk/book" class="button">Book Your Clean Now</a>
+                </div>
+                <div class="footer">
+                  <p>© 2026 Tydl Cleaning. All rights reserved.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send email');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending discount code email:', error);
+    return false; // For MVP, don't block if email fails
+  }
+}
+
+/**
+ * Send booking confirmation email
+ */
+export async function sendBookingConfirmationEmail(
+  email: string,
+  customerName: string,
+  bookingDetails: {
+    bookingId: string;
+    serviceType: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    totalPrice: number;
+    cleanerName?: string;
+    cleanerRating?: number;
+  }
+) {
+  try {
+    if (!RESEND_API_KEY) {
+      console.warn('Resend API key not configured, skipping email');
+      return true;
+    }
+
+    const dateObj = new Date(bookingDetails.scheduledDate);
+    const formattedDate = dateObj.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'noreply@tydl.co.uk',
+        to: email,
+        subject: `Your Booking Confirmation - Tydl Cleaning ✓`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+                .container { max-width: 600px; margin: 0 auto; }
+                .header { background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; padding: 40px; text-align: center; }
+                .content { padding: 40px; background: #f5f5f5; }
+                .booking-box { background: white; padding: 30px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #4f46e5; }
+                .details { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+                .detail-item { background: #f9f9f9; padding: 15px; border-radius: 6px; }
+                .detail-label { color: #666; font-size: 12px; text-transform: uppercase; }
+                .detail-value { color: #333; font-weight: bold; font-size: 16px; margin-top: 5px; }
+                .status { display: inline-block; background: #dcfce7; color: #166534; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+                .button { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+                .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Booking Confirmed! ✓</h1>
+                  <p>Your cleaning is all set</p>
+                </div>
+                <div class="content">
+                  <p>Hi ${customerName},</p>
+                  <p>Great news! Your booking has been confirmed. We're assigning your cleaner now and will send you their details within 24 hours.</p>
+
+                  <div class="booking-box">
+                    <div style="margin-bottom: 20px;">
+                      <span class="status">BOOKING CONFIRMED</span>
+                      <p style="margin-top: 10px; color: #666; font-size: 12px;">Booking ID: ${bookingDetails.bookingId}</p>
+                    </div>
+
+                    <div class="details">
+                      <div class="detail-item">
+                        <div class="detail-label">Date</div>
+                        <div class="detail-value">${formattedDate}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Time</div>
+                        <div class="detail-value">${bookingDetails.scheduledTime}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Service</div>
+                        <div class="detail-value" style="text-transform: capitalize;">${bookingDetails.serviceType.replace('-', ' ')}</div>
+                      </div>
+                      <div class="detail-item">
+                        <div class="detail-label">Total Price</div>
+                        <div class="detail-value">£${bookingDetails.totalPrice.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 style="margin-top: 30px;">Next Steps:</h3>
+                  <ol>
+                    <li>We're reviewing available cleaners for your area</li>
+                    <li>You'll receive an email with your cleaner's details within 24 hours</li>
+                    <li>Get to know your cleaner and confirm the appointment</li>
+                    <li>Relax - they'll handle the rest!</li>
+                  </ol>
+
+                  <p style="color: #666; font-size: 12px; margin-top: 20px;">
+                    <strong>Questions?</strong> Reply to this email or visit your <a href="https://tydl.co.uk/customer/bookings">booking dashboard</a>
+                  </p>
+
+                  <a href="https://tydl.co.uk/customer/bookings" class="button">View Your Booking</a>
+                </div>
+                <div class="footer">
+                  <p>© 2026 Tydl Cleaning. All rights reserved.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send email');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending booking confirmation email:', error);
+    return false;
+  }
+}
