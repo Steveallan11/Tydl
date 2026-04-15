@@ -14,6 +14,7 @@ import {
   logAdminActivity,
   createCleanerAdmin,
 } from '../lib/supabase';
+import { sendCleanerJobNotificationEmail } from '../lib/email';
 import { JobFinancials, CleanerPayout } from '../types/payments';
 
 export interface DashboardStats {
@@ -168,7 +169,48 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const assignCleaner = async (bookingId: string, cleanerId: string): Promise<boolean> => {
     try {
       setError(null);
+      console.log('[AdminContext] Assigning cleaner', cleanerId, 'to booking', bookingId);
+
+      // Assign cleaner in database
       await assignCleanerToBookingSupabase(bookingId, cleanerId);
+
+      // Get the updated booking details
+      const updatedBookings = await getBookings();
+      const booking = updatedBookings.find((b: any) => b.id === bookingId);
+
+      // Get the assigned cleaner details
+      const allCleaners = await getCleaners();
+      const cleaner = allCleaners.find((c: any) => c.id === cleanerId);
+
+      if (booking && cleaner) {
+        console.log('[AdminContext] Sending job notification email to cleaner:', cleaner.email);
+
+        // Send email to cleaner about new job assignment
+        const emailSent = await sendCleanerJobNotificationEmail(
+          cleaner.email,
+          `${cleaner.first_name || cleaner.firstName} ${cleaner.last_name || cleaner.lastName}`,
+          {
+            bookingId: booking.id,
+            customerName: `${booking.customer?.first_name || booking.firstName} ${booking.customer?.last_name || booking.lastName}`,
+            serviceType: booking.service_type || booking.serviceType,
+            scheduledDate: booking.scheduled_date || booking.scheduledDate,
+            scheduledTime: booking.scheduled_time || booking.scheduledTime,
+            propertySize: booking.property_size || booking.propertySize,
+            address: booking.customer?.full_address || booking.address || 'Address not provided',
+            customerPhone: booking.customer?.phone || booking.phone,
+            customerNotes: booking.customer_notes || booking.customerNotes,
+            totalPrice: booking.total_price || booking.totalPrice,
+          }
+        );
+
+        if (emailSent) {
+          console.log('[AdminContext] Job notification email sent successfully');
+        } else {
+          console.warn('[AdminContext] Job notification email failed to send');
+        }
+      }
+
+      // Refresh data to get all updates
       await refreshData();
       return true;
     } catch (err: any) {
