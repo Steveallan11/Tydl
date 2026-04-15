@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { DebugPanel } from '../../components/common/DebugPanel';
 import { useAdmin } from '../../context/AdminContext';
 import { useAuth } from '../../context/AuthContext';
 import { CleanerManagementSection } from '../../components/admin/CleanerManagementSection';
@@ -68,8 +69,10 @@ export function AdminDashboard() {
   });
 
   return (
-    <main className="bg-slate-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+    <>
+      <DebugPanel />
+      <main className="bg-slate-50 min-h-screen">
+        <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
@@ -287,7 +290,8 @@ export function AdminDashboard() {
         {activeTab === 'cleaners' && (
           <CleanerManagementSection />
         )}
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
