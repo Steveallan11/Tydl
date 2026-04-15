@@ -81,13 +81,18 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         throw new Error('No customer logged in');
       }
 
+      // Normalize service type: convert hyphens to underscores for database
+      const normalizedServiceType = formData.serviceType?.replace(/-/g, '_') || '';
+      const normalizedPropertySize = formData.propertySize?.replace(/-/g, '_') || '';
+      const normalizedFrequency = (formData.frequency || 'once').replace(/-/g, '_');
+
       // Create booking in database
       const booking = await createBooking({
         customer_id: customerId,
-        service_type: formData.serviceType!,
-        property_size: formData.propertySize!,
+        service_type: normalizedServiceType,
+        property_size: normalizedPropertySize,
         supplies: formData.supplies || 'platform',
-        frequency: formData.frequency || 'once',
+        frequency: normalizedFrequency,
         add_ons: formData.addOns || [],
         total_price: pricing.totalPrice,
         scheduled_date: formData.scheduledDate!,

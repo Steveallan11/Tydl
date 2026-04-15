@@ -11,20 +11,21 @@ import { updateCustomerProfile } from '../../lib/supabase';
 export function Postcode() {
   const navigate = useNavigate();
   const { formData, updateFormData } = useBooking();
-  const { customer } = useCustomerAuth();
+  const { customer, isLoading } = useCustomerAuth();
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-advance if logged in and has postcode
+  // Auto-advance if logged in and has postcode but let user change it first
   useEffect(() => {
+    if (isLoading) return; // Wait for auth to load
+
     if (!customer) {
       // Not logged in - redirect to signup
       navigate('/customer/signup', { replace: true });
     } else if (customer.postcode && !formData.postcode) {
-      // Logged in with postcode on file - use it and advance
+      // Logged in with postcode on file - pre-fill it
       updateFormData({ postcode: customer.postcode });
-      navigate('/book/service', { replace: true });
     }
-  }, [customer, navigate, formData.postcode, updateFormData]);
+  }, [customer, isLoading, navigate]);
 
   const handlePostcodeChange = (value: string) => {
     updateFormData({ postcode: value });
