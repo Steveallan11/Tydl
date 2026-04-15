@@ -100,6 +100,9 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         getPayoutsByStatus('approved'),
       ]);
 
+      console.log('[AdminContext] Raw bookings data:', bookingsData);
+      console.log('[AdminContext] Cleaners data:', cleanersData);
+
       // Transform bookings to flatten customer data from Supabase relations
       const transformedBookings = (bookingsData as any[])?.map((booking: any) => ({
         ...booking,
@@ -118,7 +121,10 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         customerId: booking.customer_id || booking.customerId,
         customerNotes: booking.customer_notes || booking.customerNotes,
         addOns: booking.add_ons || booking.addOns,
+        needsBeforeAfterImages: booking.needs_before_after_images || booking.needsBeforeAfterImages,
       })) || [];
+
+      console.log('[AdminContext] Transformed bookings:', transformedBookings);
 
       // Transform cleaners to flatten data and convert snake_case to camelCase
       const transformedCleaners = (cleanersData as any[])?.map((cleaner: any) => ({
@@ -137,6 +143,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       setJobFinancials(financialsData as any);
       setPendingPayouts(pendingPayoutsData as any);
       setApprovedPayouts(approvedPayoutsData as any);
+
+      console.log('[AdminContext] Bookings state set to:', transformedBookings.length, 'items');
 
       // Calculate additional stats
       const pendingPayments = (financialsData as any[])?.filter((f: any) => f.payment_status === 'pending').reduce((sum: number, f: any) => sum + f.customer_payment, 0) || 0;

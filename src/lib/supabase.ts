@@ -348,19 +348,28 @@ export async function createBooking(bookingData: {
 }
 
 export async function getBookings() {
-  const { data, error } = await supabase
-    .from('bookings')
-    .select(
-      `
-      *,
-      customer:customers(id, first_name, last_name, email, phone),
-      cleaner:cleaners(id, first_name, last_name, email)
-      `
-    )
-    .order('created_at', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(
+        `
+        *,
+        customer:customers(id, first_name, last_name, email, phone),
+        cleaner:cleaners(id, first_name, last_name, email)
+        `
+      )
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error('[getBookings] Supabase error:', error);
+      throw error;
+    }
+    console.log('[getBookings] Retrieved', data?.length || 0, 'bookings');
+    return data || [];
+  } catch (error: any) {
+    console.error('[getBookings] Error fetching bookings:', error);
+    throw error;
+  }
 }
 
 export async function getCustomerBookings(customerId: string) {
