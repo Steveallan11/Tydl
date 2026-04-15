@@ -323,12 +323,16 @@ export function CheckoutDetails() {
                 </div>
               )}
               {(() => {
-                const paymentAmount = Math.round(pricing.totalPrice * (1 - (discountApplied?.percentage || 0) / 100) * 100);
-                console.log('[CheckoutDetails] Payment form - Total price:', pricing.totalPrice, 'Discount:', discountApplied?.percentage, 'Final amount:', paymentAmount);
+                const discountMultiplier = 1 - (discountApplied?.percentage || 0) / 100;
+                const finalPrice = pricing.totalPrice * discountMultiplier;
+                const paymentAmount = Math.round(finalPrice * 100); // Convert to pence for Stripe
+                console.log('[CheckoutDetails] Payment form - Total price:', pricing.totalPrice, 'Discount:', discountApplied?.percentage, 'Final amount in pence:', paymentAmount);
                 return (
                   <StripePaymentForm
                     amount={paymentAmount}
                     bookingId={bookingId || 'pending'}
+                    customerId={customer?.id}
+                    customerEmail={formData.email}
                     onSuccess={handlePaymentSuccess}
                     onError={handlePaymentError}
                     isProcessing={paymentProcessing}
