@@ -85,7 +85,7 @@ export function CleanerOnboarding() {
       // Create a temporary cleaner ID for now
       const cleanerId = `cleaner_${Date.now()}`;
 
-      await onboardCleaner({
+      const success = await onboardCleaner({
         cleanerId,
         email: formData.email,
         firstName: formData.firstName,
@@ -100,24 +100,26 @@ export function CleanerOnboarding() {
         payoutFrequency: formData.payoutFrequency,
       });
 
-      setSuccessMessage(`✓ Cleaner ${formData.firstName} ${formData.lastName} onboarded successfully!`);
+      if (success) {
+        setSuccessMessage(`✓ Cleaner ${formData.firstName} ${formData.lastName} onboarded successfully!`);
 
-      // Reset form
-      setFormData({
-        email: '',
-        firstName: '',
-        lastName: '',
-        phone: '',
-        postcode: '',
-        accountHolderName: '',
-        sortCode: '',
-        accountNumber: '',
-        compensationType: 'hourly',
-        hourlyRate: '16',
-        payoutFrequency: 'weekly',
-      });
+        // Reset form
+        setFormData({
+          email: '',
+          firstName: '',
+          lastName: '',
+          phone: '',
+          postcode: '',
+          accountHolderName: '',
+          sortCode: '',
+          accountNumber: '',
+          compensationType: 'hourly',
+          hourlyRate: '16',
+          payoutFrequency: 'weekly',
+        });
 
-      setTimeout(() => setSuccessMessage(''), 3000);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
     } catch (error: any) {
       setErrors({ submit: error.message || 'Failed to onboard cleaner' });
     } finally {
