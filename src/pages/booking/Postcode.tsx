@@ -6,6 +6,7 @@ import { Card } from '../../components/common/Card';
 import { useBooking } from '../../context/BookingContext';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
 import { validatePostcode } from '../../lib/validation';
+import { updateCustomerProfile } from '../../lib/supabase';
 
 export function Postcode() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export function Postcode() {
     setError(null);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!formData.postcode || formData.postcode.trim().length === 0) {
       setError('Postcode is required');
       return;
@@ -39,6 +40,19 @@ export function Postcode() {
       setError('Please enter a valid UK postcode');
       return;
     }
+
+    // Save postcode to customer profile
+    if (customer?.id) {
+      try {
+        await updateCustomerProfile(customer.id, {
+          postcode: formData.postcode,
+        });
+      } catch (err) {
+        console.error('Failed to save postcode:', err);
+        // Don't block navigation if save fails
+      }
+    }
+
     navigate('/book/service');
   };
 

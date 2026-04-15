@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { BookingFormData } from '../types/booking';
 import { calculatePricing, PricingBreakdown } from '../lib/pricing';
-import { createBooking } from '../lib/supabase';
+import { createBooking, updateCustomerProfile } from '../lib/supabase';
 
 interface BookingContextType {
   // Form data
@@ -95,6 +95,20 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       });
 
       setBookingId(booking.id);
+
+      // Save customer details to profile for future bookings
+      try {
+        await updateCustomerProfile(customerId, {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          postcode: formData.postcode,
+          full_address: formData.fullAddress,
+        });
+      } catch (profileError) {
+        console.error('Failed to update customer profile:', profileError);
+        // Don't block booking if profile update fails
+      }
 
       // Send confirmation email
       if (formData.email && formData.firstName && formData.lastName) {
