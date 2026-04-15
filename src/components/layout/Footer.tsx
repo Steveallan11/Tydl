@@ -7,9 +7,10 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="group">
             <img
-              src="/logo.png"
+              src="/logo-white.png"
               alt="Tydl"
-              className="h-14 w-auto object-contain mb-4 group-hover:scale-105 transition-transform duration-300"
+              className="h-24 w-auto object-contain mb-4 group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/logo.png'; }}
             />
             <p className="text-sm text-slate-400 leading-relaxed">
               Fast, trusted cleaning for busy people in Northamptonshire.

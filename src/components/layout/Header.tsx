@@ -9,7 +9,7 @@ export function Header() {
             <img
               src="/logo.png"
               alt="Tydl"
-              className="h-12 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+              className="h-16 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </Link>
 

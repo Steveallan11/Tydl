@@ -13,12 +13,17 @@ export function Postcode() {
   const { customer } = useCustomerAuth();
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect to login if not authenticated
+  // Auto-advance if logged in and has postcode
   useEffect(() => {
     if (!customer) {
+      // Not logged in - redirect to signup
       navigate('/customer/signup', { replace: true });
+    } else if (customer.postcode && !formData.postcode) {
+      // Logged in with postcode on file - use it and advance
+      updateFormData({ postcode: customer.postcode });
+      navigate('/book/service', { replace: true });
     }
-  }, [customer, navigate]);
+  }, [customer, navigate, formData.postcode, updateFormData]);
 
   const handlePostcodeChange = (value: string) => {
     updateFormData({ postcode: value });
