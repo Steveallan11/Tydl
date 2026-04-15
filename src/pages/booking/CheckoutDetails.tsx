@@ -92,24 +92,35 @@ export function CheckoutDetails() {
         serviceType: formData.serviceType,
         propertySize: formData.propertySize,
         totalPrice: pricing.totalPrice,
+        scheduledDate: formData.scheduledDate,
+        scheduledTime: formData.scheduledTime,
       });
 
       // Submit booking after successful payment
       await submitBooking(customer.id);
 
-      console.log('[CheckoutDetails] Booking submitted successfully');
+      console.log('[CheckoutDetails] Booking submitted successfully, hiding payment form');
 
       // Mark discount code as used if applied
       if (discountApplied) {
         useDiscountCode(discountApplied.code);
       }
 
+      // Hide payment form to prevent re-submission
+      setShowPaymentForm(false);
+
       // Navigate to confirmation after successful submission
       console.log('[CheckoutDetails] Navigating to confirmation');
-      setTimeout(() => navigate('/book/confirmation'), 100);
+      setTimeout(() => navigate('/book/confirmation'), 500);
     } catch (error: any) {
       console.error('[CheckoutDetails] Booking submission failed:', error);
       const errorMsg = error.message || error.toString() || 'Booking submission failed. Please try again.';
+      console.error('[CheckoutDetails] Error details:', {
+        message: errorMsg,
+        name: error.name,
+        code: error.code,
+        stack: error.stack,
+      });
       setPaymentError(errorMsg);
       setShowPaymentForm(true);
     } finally {

@@ -60,20 +60,29 @@ export function StripePaymentForm({
     }
 
     setCardError(null);
+    setIsLoading(true);
 
     // For MVP: Simulate payment processing
     // In production, this would use actual Stripe payment intent and confirmCardPayment
     try {
+      console.log('[StripePaymentForm] Processing payment for booking:', bookingId);
+
       // Simulate payment delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 
+      const paymentId = `test_payment_${bookingId}_${Date.now()}`;
+      console.log('[StripePaymentForm] Payment successful:', paymentId);
+
       // For testing purposes, accept the payment
       // In production, this would confirm the actual Stripe payment
-      onSuccess(`test_payment_${bookingId}_${Date.now()}`);
+      onSuccess(paymentId);
     } catch (err: any) {
       const message = err.message || 'Payment failed. Please try again.';
+      console.error('[StripePaymentForm] Payment error:', err);
       setCardError(message);
       onError(message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -172,10 +181,10 @@ export function StripePaymentForm({
       {/* Payment Button */}
       <Button
         type="submit"
-        disabled={isProcessing}
+        disabled={isProcessing || isLoading}
         className="w-full"
       >
-        {isProcessing ? '💳 Processing Payment...' : '💳 Complete Payment'}
+        {isLoading ? '💳 Processing Payment...' : isProcessing ? '💳 Completing Booking...' : '💳 Complete Payment'}
       </Button>
 
       {/* Security Note */}
