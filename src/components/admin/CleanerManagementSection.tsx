@@ -88,7 +88,11 @@ export function CleanerManagementSection() {
               </thead>
               <tbody>
                 {filteredCleaners.map((cleaner) => (
-                  <tr key={cleaner.id} className="border-b border-slate-100 hover:bg-slate-50">
+                  <tr
+                    key={cleaner.id}
+                    className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/admin/cleaners/${cleaner.id}`)}
+                  >
                     <td className="py-3 px-4">
                       <p className="font-semibold text-slate-900">
                         {cleaner.firstName} {cleaner.lastName}
