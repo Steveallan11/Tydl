@@ -45,7 +45,7 @@ export function CustomerSignup() {
 
     try {
       await signup(email, password, firstName, lastName, postcode, phone);
-      navigate('/customer/dashboard');
+      navigate('/book/postcode');
     } catch (err) {
       console.error('Signup failed:', err);
     } finally {

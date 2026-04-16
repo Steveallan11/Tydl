@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { BookingFormData } from '../types/booking';
 import { calculatePricing, PricingBreakdown } from '../lib/pricing';
-import { createBooking, updateCustomerProfile, sendNotification } from '../lib/supabase';
+import { createBooking, updateCustomerProfile } from '../lib/supabase';
 import { sendBookingConfirmationEmail } from '../lib/email';
 
 interface BookingContextType {
@@ -166,18 +166,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
           });
           console.log('[submitBooking] Confirmation email sent successfully');
 
-          // Also send in-app notification
-          console.log('[submitBooking] Sending in-app notification...');
-          await sendNotification(
-            customerId,
-            'customer',
-            'booking_confirmed',
-            'Booking Confirmed!',
-            `Your ${formData.serviceType} booking for ${formData.scheduledDate} has been confirmed.`,
-            { bookingId: booking.id },
-            'in-app'
-          );
-          console.log('[submitBooking] In-app notification sent');
+          // In-app notification would go here in v1.1 when notifications table is created
+          console.log('[submitBooking] Booking confirmed with ID:', booking.id);
         } catch (emailError: any) {
           console.error('[submitBooking] Error sending confirmation:', {
             message: emailError.message,
