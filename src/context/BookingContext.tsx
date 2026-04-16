@@ -21,12 +21,24 @@ interface BookingContextType {
 
   // Booking submission
   isSubmitting: boolean;
-  submitBooking: (customerId: string) => Promise<void>;
+  submitBooking: (customerId: string, paymentIntentId?: string) => Promise<{ id: string }>;
   bookingId?: string;
 }
 
 const defaultFormData: BookingFormData = {
   addOns: [],
+};
+
+const BOOKING_SERVICE_TYPE_MAP: Record<string, string> = {
+  'regular-clean': 'regular-clean',
+  'one-off-clean': 'one-off-clean',
+  'deep-clean': 'deep-clean',
+  'end-of-tenancy': 'end-of-tenancy',
+};
+
+const toBookingServiceType = (serviceType?: string) => {
+  if (!serviceType) return '';
+  return BOOKING_SERVICE_TYPE_MAP[serviceType] || '';
 };
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -73,7 +85,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const submitBooking = async (customerId: string) => {
+  const submitBooking = async (customerId: string, paymentIntentId?: string) => {
     setIsSubmitting(true);
     try {
       // Use the customer ID passed from the auth context
@@ -177,6 +189,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
       // Move to confirmation step
       setCurrentStep(9);
+      return booking;
     } finally {
       setIsSubmitting(false);
     }

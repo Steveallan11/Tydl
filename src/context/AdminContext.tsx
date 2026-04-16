@@ -5,6 +5,7 @@ import {
   getBookings,
   getCleaners,
   assignCleanerToBooking as assignCleanerToBookingSupabase,
+  assignCleanerWithNotifications,
   updateBookingStatus as updateBookingStatusSupabase,
   getDashboardStats,
   getAllJobFinancials,

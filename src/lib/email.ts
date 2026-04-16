@@ -160,6 +160,281 @@ export async function sendDiscountCodeEmail(email: string, discountCode: string,
 }
 
 /**
+ * Send email to customer when cleaner has been assigned
+ */
+export async function sendCustomerCleanerAssignedEmail(
+  email: string,
+  customerName: string,
+  cleanerDetails: {
+    cleanerName: string;
+    cleanerRating: number;
+    cleanerPhone: string;
+    bookingId: string;
+    scheduledDate: string;
+    scheduledTime: string;
+  }
+) {
+  try {
+    if (!RESEND_API_KEY) {
+      console.warn('Resend API key not configured, skipping email');
+      return true;
+    }
+
+    const dateObj = new Date(cleanerDetails.scheduledDate);
+    const formattedDate = dateObj.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'noreply@tydl.co.uk',
+        to: email,
+        subject: `Meet Your Cleaner - ${cleanerDetails.cleanerName} ✨`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+                .container { max-width: 600px; margin: 0 auto; }
+                .header { background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; padding: 40px; text-align: center; }
+                .content { padding: 40px; background: #f5f5f5; }
+                .cleaner-card { background: white; padding: 30px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #10b981; }
+                .cleaner-info { display: flex; gap: 20px; margin: 15px 0; }
+                .info-item { flex: 1; }
+                .info-label { color: #666; font-size: 12px; text-transform: uppercase; }
+                .info-value { color: #333; font-weight: bold; font-size: 16px; margin-top: 5px; }
+                .rating { color: #f59e0b; font-size: 18px; }
+                .next-steps { background: #ecfdf5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                .button { display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+                .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Great News! ✨</h1>
+                  <p>Your cleaner has been assigned</p>
+                </div>
+                <div class="content">
+                  <p>Hi ${customerName},</p>
+                  <p>Excellent news! We've matched you with <strong>${cleanerDetails.cleanerName}</strong> for your cleaning on <strong>${formattedDate}</strong>.</p>
+
+                  <div class="cleaner-card">
+                    <h2 style="margin: 0 0 15px 0; color: #333;">${cleanerDetails.cleanerName}</h2>
+                    <div class="cleaner-info">
+                      <div class="info-item">
+                        <div class="info-label">Rating</div>
+                        <div class="info-value"><span class="rating">⭐ ${cleanerDetails.cleanerRating.toFixed(1)}/5</span></div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value"><a href="tel:${cleanerDetails.cleanerPhone}" style="color: #4f46e5; text-decoration: none;">${cleanerDetails.cleanerPhone}</a></div>
+                      </div>
+                      <div class="info-item">
+                        <div class="info-label">Booking ID</div>
+                        <div class="info-value" style="font-family: monospace; font-size: 14px;">${cleanerDetails.bookingId}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="next-steps">
+                    <h3 style="margin: 0 0 10px 0;">What happens next?</h3>
+                    <ol style="margin: 0; padding-left: 20px;">
+                      <li>${cleanerDetails.cleanerName} will text you on your phone number to confirm arrival</li>
+                      <li>They'll arrive within a 30-minute window on the agreed time</li>
+                      <li>We'll stay in touch with you during the clean</li>
+                      <li>Rate your cleaner after they're done</li>
+                    </ol>
+                  </div>
+
+                  <p style="color: #666; font-size: 14px;">
+                    <strong>Need to reach them?</strong> Use the phone number above or reply to this email for support.
+                  </p>
+
+                  <a href="https://tydl.co.uk/customer/bookings" class="button">View Booking Details</a>
+                </div>
+                <div class="footer">
+                  <p>© 2026 Tydl Cleaning. All rights reserved.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send email');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending cleaner assigned email to customer:', error);
+    return false;
+  }
+}
+
+/**
+ * Send job notification email to cleaner
+ */
+export async function sendCleanerJobNotificationEmail(
+  email: string,
+  cleanerName: string,
+  jobDetails: {
+    bookingId: string;
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    scheduledDate: string;
+    scheduledTime: string;
+    serviceType: string;
+    totalPrice: number;
+    estimatedDuration: number;
+  }
+) {
+  try {
+    if (!RESEND_API_KEY) {
+      console.warn('Resend API key not configured, skipping email');
+      return true;
+    }
+
+    const dateObj = new Date(jobDetails.scheduledDate);
+    const formattedDate = dateObj.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'jobs@tydl.co.uk',
+        to: email,
+        subject: `New Job Alert - ${jobDetails.customerName} on ${formattedDate}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+                .container { max-width: 600px; margin: 0 auto; }
+                .header { background: linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%); color: white; padding: 40px; text-align: center; }
+                .content { padding: 40px; background: #f5f5f5; }
+                .job-card { background: white; padding: 30px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #4f46e5; }
+                .job-detail { margin: 15px 0; display: flex; justify-content: space-between; }
+                .detail-label { color: #666; font-size: 12px; text-transform: uppercase; }
+                .detail-value { color: #333; font-weight: bold; }
+                .customer-info { background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                .button { display: inline-block; padding: 12px 30px; background: #10b981; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 20px; }
+                .footer { padding: 20px; text-align: center; color: #666; font-size: 12px; }
+                .price-highlight { background: #fef3c7; padding: 15px; border-radius: 6px; margin: 15px 0; font-size: 18px; font-weight: bold; text-align: center; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>🧹 New Job!</h1>
+                  <p>Check the details below</p>
+                </div>
+                <div class="content">
+                  <p>Hi ${cleanerName},</p>
+                  <p>You have a new cleaning job assigned. Please review the details and confirm you can make it.</p>
+
+                  <div class="job-card">
+                    <h2 style="margin: 0 0 20px 0; color: #333;">Job Details</h2>
+
+                    <div class="job-detail">
+                      <div>
+                        <div class="detail-label">Booking ID</div>
+                        <div class="detail-value" style="font-family: monospace;">${jobDetails.bookingId}</div>
+                      </div>
+                      <div>
+                        <div class="detail-label">Service</div>
+                        <div class="detail-value">${jobDetails.serviceType}</div>
+                      </div>
+                    </div>
+
+                    <div class="job-detail">
+                      <div>
+                        <div class="detail-label">Date</div>
+                        <div class="detail-value">${formattedDate}</div>
+                      </div>
+                      <div>
+                        <div class="detail-label">Time</div>
+                        <div class="detail-value">${jobDetails.scheduledTime}</div>
+                      </div>
+                    </div>
+
+                    <div class="job-detail">
+                      <div>
+                        <div class="detail-label">Duration (est.)</div>
+                        <div class="detail-value">${jobDetails.estimatedDuration.toFixed(1)} hours</div>
+                      </div>
+                    </div>
+
+                    <div class="price-highlight">
+                      Earn: £${jobDetails.totalPrice.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div class="customer-info">
+                    <h3 style="margin: 0 0 15px 0; color: #333;">Customer</h3>
+                    <p style="margin: 0;"><strong>${jobDetails.customerName}</strong></p>
+                    <p style="margin: 5px 0 0 0; color: #666;">
+                      <a href="tel:${jobDetails.customerPhone}" style="color: #4f46e5; text-decoration: none;">📞 ${jobDetails.customerPhone}</a>
+                    </p>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 15px 0;">
+                    <p style="margin: 0; color: #333;">
+                      📍 <strong>${jobDetails.address}</strong>
+                    </p>
+                  </div>
+
+                  <p style="color: #333; font-weight: bold;">
+                    ✅ Please confirm you can accept this job by replying to this email or logging into the Cleaner Portal.
+                  </p>
+
+                  <a href="https://tydl-cleaner.app/jobs/${jobDetails.bookingId}/accept" class="button">Accept Job</a>
+
+                  <p style="color: #666; font-size: 12px; margin-top: 20px;">
+                    <strong>Can't make it?</strong> Let us know ASAP so we can reassign to another cleaner.
+                  </p>
+                </div>
+                <div class="footer">
+                  <p>© 2026 Tydl Cleaning. All rights reserved.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send email');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error sending job notification email to cleaner:', error);
+    return false;
+  }
+}
+
+/**
  * Send booking confirmation email
  */
 export async function sendBookingConfirmationEmail(

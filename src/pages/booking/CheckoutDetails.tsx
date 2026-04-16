@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { Elements, CardElement, AddressElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
@@ -99,6 +100,21 @@ export function CheckoutDetails() {
     try {
       setPaymentProcessing(true);
       setPaymentError('');
+      const pendingBookingRef = `pending:${customer.id}:${Date.now()}`;
+
+      // Step 1: Create Payment Intent
+      const paymentResult = await createPaymentIntent(
+        pendingBookingRef,
+        customer.id,
+        pricing.totalPrice,
+        `${formData.serviceType} - ${formData.propertySize}`,
+        formData.email
+      );
+
+      if (!paymentResult.success || !paymentResult.clientSecret) {
+        setPaymentError(paymentResult.error || 'Failed to initialize payment');
+        return;
+      }
 
       console.log('[CheckoutDetails] Processing payment with card:', cardNumber.slice(-4));
 
@@ -261,6 +277,9 @@ export function CheckoutDetails() {
                   />
                 </div>
               </div>
+              <p className="text-xs text-amber-700 mt-2 bg-amber-50 p-2 rounded">
+                💡 <strong>UK users:</strong> If prompted for a "Zip" field, enter any 5 digits (e.g., 12345). Your UK postcode is collected above.
+              </p>
             </div>
 
             {/* Errors */}
@@ -298,5 +317,27 @@ export function CheckoutDetails() {
         </Card>
       </div>
     </>
+  );
+}
+
+// Outer component that provides Stripe context
+export function CheckoutDetails() {
+  const stripeConfig = getStripeConfig();
+  const stripePromise = getStripe();
+
+  if (!stripeConfig || !stripePromise) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <Card>
+          <p className="text-red-600">Payment system is not configured. Please contact support.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <Elements stripe={stripePromise} options={stripeConfig}>
+      <CheckoutForm />
+    </Elements>
   );
 }

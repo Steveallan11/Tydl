@@ -4,8 +4,12 @@ import { loadStripe, Stripe as StripeType } from '@stripe/stripe-js';
 // Debug: Log environment variables
 console.log('[Stripe Init] VITE_STRIPE_PUBLIC_KEY:', import.meta.env.VITE_STRIPE_PUBLIC_KEY ? '✓ Set' : '✗ Missing');
 
-const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const cleanEnvValue = (value: string | undefined) =>
+  typeof value === 'string' ? value.trim().replace(/^[<"]+|[>"]+$/g, '') : value;
+
+const STRIPE_PUBLIC_KEY = cleanEnvValue(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const SUPABASE_URL = cleanEnvValue(import.meta.env.VITE_SUPABASE_URL);
+const SUPABASE_ANON_KEY = cleanEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 if (!STRIPE_PUBLIC_KEY) {
   console.warn('[Stripe] ⚠️ Stripe public key not configured in environment variables');
@@ -63,31 +67,24 @@ export async function createPaymentIntent(
       description,
     });
 
-    // Call Supabase Edge Function to create payment intent securely
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/create-payment-intent`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`,
-        },
-        body: JSON.stringify({
-          amount: Math.round(amount * 100), // Convert to pence
-          description,
-          bookingId,
-          customerId,
-          email,
-        }),
-      }
-    );
+    // Call Supabase Edge Function using the client library
+    const { data, error } = await supabase.functions.invoke('create-payment-intent', {
+      body: {
+        amount: Math.round(amount * 100), // Convert to pence
+        description,
+        bookingId,
+        customerId,
+        email,
+      },
+    });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create payment intent');
+    if (error) {
+      throw new Error(error.message || 'Failed to create payment intent');
     }
 
-    const data = await response.json();
+    if (!data) {
+      throw new Error('No response from payment intent function');
+    }
 
     console.log('[Stripe] Payment intent created successfully:', data.paymentIntentId);
 
@@ -111,7 +108,12 @@ export async function createPaymentIntent(
 /**
  * Confirm payment for a booking (after customer completes Stripe payment)
  */
-export async function confirmPayment(bookingId: string, paymentIntentId: string): Promise<PaymentResult> {
+export async function confirmPayment(
+  bookingId: string,
+  customerId: string,
+  paymentIntentId: string,
+  amount = 0
+): Promise<PaymentResult> {
   try {
     // For MVP: Payment intent creation confirms the payment
     // In production: Verify payment status with Stripe API
@@ -161,6 +163,7 @@ export function getStripeConfig() {
 
   return {
     publishableKey: STRIPE_PUBLIC_KEY,
+    locale: 'en-GB' as const,
     appearance: {
       theme: 'stripe' as const,
       variables: {

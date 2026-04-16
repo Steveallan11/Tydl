@@ -8,12 +8,12 @@ export interface ValidationError {
 }
 
 /**
- * Validate postcode (simple UK postcode validation)
+ * Validate postcode (UK postcode validation)
  */
 export function validatePostcode(postcode: string): boolean {
   if (!postcode || postcode.trim().length === 0) return false;
-  // Simple UK postcode pattern - allows common formats
-  const postcodeRegex = /^[A-Z]{1,2}[0-9]{1,2}[A-Z]?\s?[0-9][A-Z]{2}$/i;
+  // UK postcode pattern - allows formats like NN1 1AA, NN11AA, M1 1AA, B33 8TH
+  const postcodeRegex = /^[A-Z]{1,2}[0-9R][0-9A-Z]?\s?[0-9][A-Z]{2}$/i;
   return postcodeRegex.test(postcode.trim());
 }
 

@@ -2,6 +2,14 @@ import { Booking } from '../../types/booking';
 import { Button } from '../common/Button';
 import { SERVICES, PROPERTY_SIZES } from '../../lib/constants';
 
+function isServiceKey(value: string): value is keyof typeof SERVICES {
+  return value in SERVICES;
+}
+
+function isPropertySizeKey(value: string): value is keyof typeof PROPERTY_SIZES {
+  return value in PROPERTY_SIZES;
+}
+
 interface BookingCardProps {
   booking: Booking;
   onAssign: () => void;
