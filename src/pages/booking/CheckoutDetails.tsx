@@ -405,7 +405,7 @@ export function CheckoutDetails() {
           </div>
         </form>
       </Card>
-    </div>
+      </div>
     </>
   );
 }
