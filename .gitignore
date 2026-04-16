@@ -23,3 +23,5 @@ build/
 
 # Build info
 tsconfig.tsbuildinfo
+.vercel
+.env*.local

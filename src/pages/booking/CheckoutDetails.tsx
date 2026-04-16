@@ -14,14 +14,13 @@ function CheckoutForm() {
   const navigate = useNavigate();
   const stripe = useStripe();
   const elements = useElements();
-  const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
+  const { formData, updateFormData, isSubmitting, submitBooking, pricing } = useBooking();
   const { customer, refreshCustomer } = useCustomerAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [paymentError, setPaymentError] = useState('');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
   const [discountApplied, setDiscountApplied] = useState(false);
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const handleChange = (field: string, value: string) => {
@@ -68,10 +67,11 @@ function CheckoutForm() {
     try {
       setPaymentProcessing(true);
       setPaymentError('');
+      const pendingBookingRef = `pending:${customer.id}:${Date.now()}`;
 
       // Step 1: Create Payment Intent
       const paymentResult = await createPaymentIntent(
-        'temp-booking-id', // Temporary ID, will update after booking created
+        pendingBookingRef,
         customer.id,
         pricing.totalPrice,
         `${formData.serviceType} - ${formData.propertySize}`,
@@ -83,7 +83,6 @@ function CheckoutForm() {
         return;
       }
 
-      setPaymentIntentId(paymentResult.paymentIntentId || null);
       setClientSecret(paymentResult.clientSecret);
 
       // Step 2: Confirm payment with Stripe
@@ -111,11 +110,20 @@ function CheckoutForm() {
         return;
       }
 
-      // Step 3: Confirm payment in database
-      await confirmPayment('temp-booking-id', paymentIntent.id);
+      // Step 3: Create the real booking after Stripe succeeds
+      const booking = await submitBooking(customer.id, paymentIntent.id);
 
-      // Step 4: ONLY submit booking after payment succeeded
-      await submitBooking(customer.id, paymentIntent.id);
+      // Step 4: Persist the captured payment against the real booking
+      const confirmationResult = await confirmPayment(
+        booking.id,
+        customer.id,
+        paymentIntent.id,
+        pricing.totalPrice
+      );
+      if (!confirmationResult.success) {
+        throw new Error(confirmationResult.error || 'Payment succeeded but booking payment could not be recorded');
+      }
+
       try { await refreshCustomer(); } catch (e) { console.error('Failed to refresh:', e); }
 
       setTimeout(() => navigate('/book/confirmation'), 500);

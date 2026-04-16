@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { BookingFormData } from '../types/booking';
 import { calculatePricing, PricingBreakdown } from '../lib/pricing';
-import { createBooking, updateCustomerProfile, sendNotification, updateBookingPaymentIntentId } from '../lib/supabase';
+import { createBooking, updateCustomerProfile, sendNotification } from '../lib/supabase';
 import { sendBookingConfirmationEmail } from '../lib/email';
 
 interface BookingContextType {
@@ -21,12 +21,24 @@ interface BookingContextType {
 
   // Booking submission
   isSubmitting: boolean;
-  submitBooking: (customerId: string) => Promise<void>;
+  submitBooking: (customerId: string, paymentIntentId?: string) => Promise<{ id: string }>;
   bookingId?: string;
 }
 
 const defaultFormData: BookingFormData = {
   addOns: [],
+};
+
+const BOOKING_SERVICE_TYPE_MAP: Record<string, string> = {
+  'regular-clean': 'regular-clean',
+  'one-off-clean': 'one-off-clean',
+  'deep-clean': 'deep-clean',
+  'end-of-tenancy': 'end-of-tenancy',
+};
+
+const toBookingServiceType = (serviceType?: string) => {
+  if (!serviceType) return '';
+  return BOOKING_SERVICE_TYPE_MAP[serviceType] || '';
 };
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
@@ -86,10 +98,14 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         console.warn('[BookingContext] No payment intent ID provided - booking may not be paid');
       }
 
-      // Normalize service type: convert hyphens to underscores for database
-      const normalizedServiceType = formData.serviceType?.replace(/-/g, '_') || '';
-      const normalizedPropertySize = formData.propertySize?.replace(/-/g, '_') || '';
-      const normalizedFrequency = (formData.frequency || 'once').replace(/-/g, '_');
+      // Keep UI slugs aligned to the database check constraints.
+      const normalizedServiceType = toBookingServiceType(formData.serviceType);
+      const normalizedPropertySize = formData.propertySize || '';
+      const normalizedFrequency = formData.frequency || 'once';
+
+      if (!normalizedServiceType) {
+        throw new Error(`Unsupported service type: ${formData.serviceType || 'missing'}`);
+      }
 
       // Create booking in database
       const booking = await createBooking({
@@ -107,16 +123,6 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       });
 
       setBookingId(booking.id);
-
-      // Update job_financials with actual booking ID if we have payment intent
-      if (paymentIntentId) {
-        try {
-          await updateBookingPaymentIntentId(booking.id, paymentIntentId);
-        } catch (err) {
-          console.warn('[BookingContext] Failed to link payment intent to booking:', err);
-          // Don't block the booking if this fails
-        }
-      }
 
       // Save customer details to profile for future bookings
       try {
@@ -161,6 +167,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
       // Move to confirmation step
       setCurrentStep(9);
+      return booking;
     } finally {
       setIsSubmitting(false);
     }

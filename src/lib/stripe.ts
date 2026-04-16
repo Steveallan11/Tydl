@@ -4,9 +4,12 @@ import { loadStripe, Stripe as StripeType } from '@stripe/stripe-js';
 // Debug: Log environment variables
 console.log('[Stripe Init] VITE_STRIPE_PUBLIC_KEY:', import.meta.env.VITE_STRIPE_PUBLIC_KEY ? '✓ Set' : '✗ Missing');
 
-const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const cleanEnvValue = (value: string | undefined) =>
+  typeof value === 'string' ? value.trim().replace(/^[<"]+|[>"]+$/g, '') : value;
+
+const STRIPE_PUBLIC_KEY = cleanEnvValue(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const SUPABASE_URL = cleanEnvValue(import.meta.env.VITE_SUPABASE_URL);
+const SUPABASE_ANON_KEY = cleanEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY);
 
 if (!STRIPE_PUBLIC_KEY) {
   console.warn('[Stripe] ⚠️ Stripe public key not configured in environment variables');
@@ -85,24 +88,6 @@ export async function createPaymentIntent(
 
     console.log('[Stripe] Payment intent created successfully:', data.paymentIntentId);
 
-    // Store payment intent reference in database
-    await supabase
-      .from('job_financials')
-      .insert([
-        {
-          booking_id: bookingId,
-          customer_id: customerId,
-          customer_payment: amount,
-          cleaner_payout: 0, // Will be calculated separately
-          platform_fee: 0,
-          net_profit: 0,
-          payment_method: 'card',
-          payment_status: 'pending',
-          stripe_payment_id: data.paymentIntentId,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-
     return {
       success: true,
       paymentIntentId: data.paymentIntentId,
@@ -120,20 +105,40 @@ export async function createPaymentIntent(
 /**
  * Confirm payment for a booking (after customer completes Stripe payment)
  */
-export async function confirmPayment(bookingId: string, paymentIntentId: string): Promise<PaymentResult> {
+export async function confirmPayment(
+  bookingId: string,
+  customerId: string,
+  paymentIntentId: string,
+  amount = 0
+): Promise<PaymentResult> {
   try {
-    // Update the job financial record to mark payment as captured
-    const { data, error } = await supabase
-      .from('job_financials')
-      .update({
-        payment_status: 'captured',
-        stripe_payment_id: paymentIntentId,
-      })
-      .eq('booking_id', bookingId)
-      .select()
-      .single();
+    const paymentRecord = {
+      booking_id: bookingId,
+      customer_id: customerId,
+      customer_payment: amount,
+      cleaner_payout: 0,
+      platform_fee: 0,
+      net_profit: 0,
+      payment_method: 'card',
+      payment_status: 'captured',
+      stripe_payment_id: paymentIntentId,
+    };
 
-    if (error) throw error;
+    const { data: updatedRows, error: updateError } = await supabase
+      .from('job_financials')
+      .update(paymentRecord)
+      .eq('booking_id', bookingId)
+      .select('id');
+
+    if (updateError) throw updateError;
+
+    if (!updatedRows || updatedRows.length === 0) {
+      const { error: insertError } = await supabase
+        .from('job_financials')
+        .insert(paymentRecord);
+
+      if (insertError) throw insertError;
+    }
 
     return {
       success: true,

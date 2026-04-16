@@ -2,6 +2,14 @@ import { Booking } from '../../types/booking';
 import { Button } from '../common/Button';
 import { SERVICES, PROPERTY_SIZES } from '../../lib/constants';
 
+function isServiceKey(value: string): value is keyof typeof SERVICES {
+  return value in SERVICES;
+}
+
+function isPropertySizeKey(value: string): value is keyof typeof PROPERTY_SIZES {
+  return value in PROPERTY_SIZES;
+}
+
 interface BookingCardProps {
   booking: Booking;
   onAssign: () => void;
@@ -20,10 +28,12 @@ export function BookingCard({ booking, onAssign }: BookingCardProps) {
     return colors[status] || 'bg-slate-100 text-slate-800';
   };
 
-  const serviceKey = booking.serviceType as any;
-  const service = SERVICES[serviceKey];
-  const propSizeKey = booking.propertySize as any;
-  const propSize = PROPERTY_SIZES[propSizeKey];
+  const service = isServiceKey(booking.serviceType)
+    ? SERVICES[booking.serviceType]
+    : undefined;
+  const propSize = isPropertySizeKey(booking.propertySize)
+    ? PROPERTY_SIZES[booking.propertySize]
+    : undefined;
 
   return (
     <div className="border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow bg-white">

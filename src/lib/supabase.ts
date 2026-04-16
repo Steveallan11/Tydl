@@ -4,14 +4,16 @@ import type { User } from '@supabase/supabase-js';
 let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 let supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+const cleanEnvValue = (value: string | undefined) =>
+  typeof value === 'string' ? value.trim().replace(/^[<"]+|[>"]+$/g, '') : value;
+
 console.log('[Supabase Init] Raw URL:', supabaseUrl);
 console.log('[Supabase Init] Raw URL type:', typeof supabaseUrl);
 console.log('[Supabase Init] Raw URL length:', supabaseUrl?.length);
 
 // Clean the URL if it has extra formatting
-if (supabaseUrl && typeof supabaseUrl === 'string') {
-  supabaseUrl = supabaseUrl.trim().replace(/^[<"]|[>"]$/g, '');
-}
+supabaseUrl = cleanEnvValue(supabaseUrl);
+supabaseAnonKey = cleanEnvValue(supabaseAnonKey);
 
 console.log('[Supabase Init] Cleaned URL:', supabaseUrl);
 console.log('[Supabase Init] URL exists:', !!supabaseUrl);
