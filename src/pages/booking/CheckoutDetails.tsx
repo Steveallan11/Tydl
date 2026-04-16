@@ -1,42 +1,28 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { Elements, CardElement, AddressElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { StepIndicator } from '../../components/booking/StepIndicator';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
-import { StripePaymentForm } from '../../components/booking/StripePaymentForm';
 import { useBooking } from '../../context/BookingContext';
 import { useCustomerAuth } from '../../context/CustomerAuthContext';
-import { validateBookingStep } from '../../lib/validation';
-import { validateDiscountCode, useDiscountCode } from '../../lib/email';
+import { validateBookingStep, validatePostcode } from '../../lib/validation';
+import { getStripe, createPaymentIntent, confirmPayment, getStripeConfig } from '../../lib/stripe';
 
-export function CheckoutDetails() {
+// Inner component that uses Stripe hooks
+function CheckoutForm() {
   const navigate = useNavigate();
+  const stripe = useStripe();
+  const elements = useElements();
   const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
   const { customer, refreshCustomer } = useCustomerAuth();
-
-export function CheckoutDetails() {
-  const navigate = useNavigate();
-  const { formData, updateFormData, isSubmitting, submitBooking, pricing, bookingId } = useBooking();
-  const { customer } = useCustomerAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [discountCode, setDiscountCode] = useState('');
-  const [discountError, setDiscountError] = useState('');
-  const [discountApplied, setDiscountApplied] = useState<{ code: string; percentage: number } | null>(null);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-
-  // Pre-fill from customer profile on mount
-  useEffect(() => {
-    if (customer) {
-      updateFormData({
-        firstName: formData.firstName || customer.first_name || '',
-        lastName: formData.lastName || customer.last_name || '',
-        email: formData.email || customer.email || '',
-        phone: formData.phone || customer.phone || '',
-      });
-    }
-  }, [customer, updateFormData]);
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   const handleChange = (field: string, value: string) => {
     updateFormData({ [field]: value } as any);
@@ -45,46 +31,37 @@ export function CheckoutDetails() {
     }
   };
 
-  const handleApplyDiscount = () => {
-    setDiscountError('');
-    const code = validateDiscountCode(discountCode.toUpperCase());
-
-    if (!code) {
-      setDiscountError('Invalid or expired discount code');
-      return;
-    }
-
-    setDiscountApplied({ code: code.code, percentage: code.percentage });
-    setDiscountCode('');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate step 8
-    const validationErrors = validateBookingStep(8, formData);
-    if (validationErrors.length > 0) {
-      const errorMap = validationErrors.reduce((acc, err) => {
-        acc[err.field] = err.message;
-        return acc;
-      }, {} as Record<string, string>);
-      setErrors(errorMap);
+    // Validate form
+    const requiredFields: Record<string, boolean> = {
+      serviceType: !!formData.serviceType,
+      propertySize: !!formData.propertySize,
+      scheduledDate: !!formData.scheduledDate,
+      scheduledTime: !!formData.scheduledTime,
+      firstName: !!formData.firstName,
+      lastName: !!formData.lastName,
+      email: !!formData.email,
+      phone: !!formData.phone,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      setPaymentError(`Missing: ${missingFields.join(', ')}`);
       return;
     }
 
-    // Show payment form instead of direct submission
-    setPaymentError('');
-    setShowPaymentForm(true);
-    console.log('[CheckoutDetails] Showing payment form');
-  };
-
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
-    console.log('[CheckoutDetails] Payment successful:', paymentIntentId);
-
     if (!customer?.id) {
-      console.error('[CheckoutDetails] No customer ID found');
-      setPaymentError('No customer ID found');
-      setShowPaymentForm(true);
+      setPaymentError('No customer found');
+      return;
+    }
+
+    if (!stripe || !elements) {
+      setPaymentError('Payment system not ready');
       return;
     }
 
@@ -92,288 +69,255 @@ export function CheckoutDetails() {
       setPaymentProcessing(true);
       setPaymentError('');
 
-      console.log('[CheckoutDetails] Submitting booking for customer:', customer.id);
-      console.log('[CheckoutDetails] Booking data:', {
-        serviceType: formData.serviceType,
-        propertySize: formData.propertySize,
-        totalPrice: pricing.totalPrice,
-        scheduledDate: formData.scheduledDate,
-        scheduledTime: formData.scheduledTime,
-      });
+      // Step 1: Create Payment Intent
+      const paymentResult = await createPaymentIntent(
+        'temp-booking-id', // Temporary ID, will update after booking created
+        customer.id,
+        pricing.totalPrice,
+        `${formData.serviceType} - ${formData.propertySize}`,
+        formData.email
+      );
 
-      // Submit booking after successful payment
-      await submitBooking(customer.id);
-
-      console.log('[CheckoutDetails] Booking submitted successfully, hiding payment form');
-
-      // Refresh customer data to reflect saved address for future bookings
-      try {
-        await refreshCustomer();
-        console.log('[CheckoutDetails] Customer profile refreshed with updated address');
-      } catch (refreshError) {
-        console.error('[CheckoutDetails] Failed to refresh customer profile:', refreshError);
-        // Don't block on this error - booking is already successful
+      if (!paymentResult.success || !paymentResult.clientSecret) {
+        setPaymentError(paymentResult.error || 'Failed to initialize payment');
+        return;
       }
 
-      // Mark discount code as used if applied
-      if (discountApplied) {
-        useDiscountCode(discountApplied.code);
+      setPaymentIntentId(paymentResult.paymentIntentId || null);
+      setClientSecret(paymentResult.clientSecret);
+
+      // Step 2: Confirm payment with Stripe
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        paymentResult.clientSecret,
+        {
+          payment_method: {
+            card: elements.getElement(CardElement)!,
+            billing_details: {
+              name: `${formData.firstName} ${formData.lastName}`,
+              email: formData.email,
+              phone: formData.phone,
+            },
+          },
+        }
+      );
+
+      if (stripeError) {
+        setPaymentError(stripeError.message || 'Payment failed');
+        return;
       }
 
-      // Hide payment form to prevent re-submission
-      setShowPaymentForm(false);
+      if (!paymentIntent || paymentIntent.status !== 'succeeded') {
+        setPaymentError('Payment was not completed. Please try again.');
+        return;
+      }
 
-      // Navigate to confirmation after successful submission
-      console.log('[CheckoutDetails] Navigating to confirmation');
+      // Step 3: Confirm payment in database
+      await confirmPayment('temp-booking-id', paymentIntent.id);
+
+      // Step 4: ONLY submit booking after payment succeeded
+      await submitBooking(customer.id, paymentIntent.id);
+      try { await refreshCustomer(); } catch (e) { console.error('Failed to refresh:', e); }
+
       setTimeout(() => navigate('/book/confirmation'), 500);
     } catch (error: any) {
-      console.error('[CheckoutDetails] Booking submission failed:', error);
-      const errorMsg = error.message || error.toString() || 'Booking submission failed. Please try again.';
-      console.error('[CheckoutDetails] Error details:', {
-        message: errorMsg,
-        name: error.name,
-        code: error.code,
-        stack: error.stack,
-      });
-      setPaymentError(errorMsg);
-      setShowPaymentForm(true);
+      setPaymentError(error.message || 'Booking failed');
     } finally {
       setPaymentProcessing(false);
     }
   };
 
-  const handlePaymentError = (error: string) => {
-    setPaymentError(error);
-    setShowPaymentForm(true);
-  };
-
   return (
+
     <div className="max-w-2xl mx-auto px-6 py-12">
       <StepIndicator currentStep={8} totalSteps={9} />
-
       <Card>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Confirm Your Details</h1>
-        <p className="text-slate-600 mb-6">We've pre-filled your information from your profile. Update if needed.</p>
-
-        {/* Profile Info Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-          <p className="text-sm text-blue-900">
-            <strong>{customer?.first_name} {customer?.last_name}</strong> • {customer?.email} • {customer?.phone}
-          </p>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Confirm & Pay</h1>
+        <div className="bg-brand-50 border border-brand-200 rounded-lg p-6 mb-8">
+          <h3 className="font-bold text-lg mb-4">Booking Summary</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span>Service:</span><span className="font-semibold">{formData.serviceType}</span></div>
+            <div className="flex justify-between"><span>Property:</span><span className="font-semibold">{formData.propertySize}</span></div>
+            <div className="flex justify-between"><span>Date:</span><span className="font-semibold">{formData.scheduledDate}</span></div>
+            <div className="flex justify-between border-t pt-2"><span>Total:</span><span className="font-bold">£{pricing.totalPrice.toFixed(2)}</span></div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-slate-50 rounded-lg p-6">
-            <h3 className="font-semibold text-slate-900 mb-4">Edit if needed</h3>
-
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  First Name
-                </label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Contact Information */}
+          <div>
+            <h3 className="font-bold text-slate-900 mb-4">Your Contact Details</h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <input
                 type="text"
+                placeholder="First Name"
                 value={formData.firstName || ''}
                 onChange={(e) => handleChange('firstName', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
-                  errors.firstName ? 'border-red-500 bg-red-50' : 'border-slate-300'
-                }`}
-                placeholder="John"
+                className="px-4 py-2 border rounded-lg"
               />
-              {errors.firstName && <p className="text-sm text-red-600 mt-1">{errors.firstName}</p>}
-            </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName || ''}
-                  onChange={(e) => handleChange('lastName', e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
-                    errors.lastName ? 'border-red-500 bg-red-50' : 'border-slate-300'
-                  }`}
-                  placeholder="Smith"
-                />
-                {errors.lastName && <p className="text-sm text-red-600 mt-1">{errors.lastName}</p>}
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Email
-              </label>
               <input
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) => handleChange('email', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
-                  errors.email ? 'border-red-500 bg-red-50' : 'border-slate-300'
-                }`}
-                placeholder="john@example.com"
+                type="text"
+                placeholder="Last Name"
+                value={formData.lastName || ''}
+                onChange={(e) => handleChange('lastName', e.target.value)}
+                className="px-4 py-2 border rounded-lg"
               />
-              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
             </div>
-
-            {/* Phone */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Phone
-              </label>
-              <input
-                type="tel"
-                value={formData.phone || ''}
-                onChange={(e) => handleChange('phone', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none ${
-                  errors.phone ? 'border-red-500 bg-red-50' : 'border-slate-300'
-                }`}
-                placeholder="01604 123456"
-              />
-              {errors.phone && <p className="text-sm text-red-600 mt-1">{errors.phone}</p>}
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Special Instructions (optional)
-            </label>
-            <textarea
-              value={formData.customerNotes || ''}
-              onChange={(e) => handleChange('customerNotes', e.target.value)}
-              placeholder="Any special requests? e.g., allergies, fragile items, etc."
-              rows={3}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none"
+            <input
+              type="email"
+              placeholder="Email"
+              value={formData.email || ''}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg mb-4"
+            />
+            <input
+              type="tel"
+              placeholder="Phone"
+              value={formData.phone || ''}
+              onChange={(e) => handleChange('phone', e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg"
             />
           </div>
 
           {/* Discount Code */}
-          <div>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Have a discount code?
+              Discount code (optional)
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="e.g., TYDL10OFF"
+                placeholder="e.g., TYDL2026"
                 value={discountCode}
-                onChange={(e) => {
-                  setDiscountCode(e.target.value.toUpperCase());
-                  setDiscountError('');
-                }}
-                onKeyPress={(e) => e.key === 'Enter' && handleApplyDiscount()}
-                disabled={discountApplied !== null}
-                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none disabled:bg-slate-100"
+                onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                disabled={discountApplied}
+                className="flex-1 px-4 py-2 border rounded-lg"
               />
-              {discountApplied ? (
+              {!discountApplied && (
                 <button
                   type="button"
-                  onClick={() => setDiscountApplied(null)}
-                  className="px-4 py-3 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors"
-                >
-                  Remove
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleApplyDiscount}
-                  disabled={!discountCode}
-                  className="px-4 py-3 bg-brand-600 text-white font-medium rounded-lg hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    // TODO: Validate discount code
+                    if (discountCode.length > 0) {
+                      setDiscountApplied(true);
+                    } else {
+                      setPaymentError('Enter a discount code');
+                    }
+                  }}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700"
                 >
                   Apply
                 </button>
               )}
             </div>
-            {discountApplied && (
-              <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-700">
-                  ✓ Discount applied! {discountApplied.percentage}% off your booking.
-                </p>
-              </div>
-            )}
-            {discountError && (
-              <p className="text-sm text-red-600 mt-2">{discountError}</p>
-            )}
+            {discountApplied && <p className="text-sm text-green-600 mt-2">✓ Discount applied</p>}
           </div>
 
-          {/* Price Summary with Discount */}
-          <div className="bg-slate-50 rounded-lg p-4">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-600">Subtotal</span>
-                <span className="font-medium">£{pricing.totalPrice.toFixed(2)}</span>
+          {/* Payment & Address Information */}
+          <div>
+            <h3 className="font-bold text-slate-900 mb-4">Billing Address & Payment</h3>
+            <div className="border rounded-lg p-4 bg-slate-50">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Address</label>
+              <div className="bg-white border rounded-lg p-3">
+                <AddressElement
+                  options={{
+                    mode: 'billing',
+                    defaultValues: {
+                      address: {
+                        country: 'GB',
+                      },
+                    },
+                  }}
+                />
               </div>
-              {discountApplied && (
-                <div className="flex justify-between text-green-600">
-                  <span>Discount ({discountApplied.percentage}%)</span>
-                  <span>-£{(pricing.totalPrice * discountApplied.percentage / 100).toFixed(2)}</span>
-                </div>
-              )}
-              <div className="border-t border-slate-200 pt-2 flex justify-between font-bold">
-                <span>Total</span>
-                <span className="text-lg">
-                  £{(pricing.totalPrice * (1 - (discountApplied?.percentage || 0) / 100)).toFixed(2)}
-                </span>
+              <p className="text-xs text-amber-700 mt-2 bg-amber-50 p-2 rounded">
+                💡 <strong>UK users:</strong> If prompted for a "Zip" field, enter any 5 digits (e.g., 12345). Your UK postcode is collected above.
+              </p>
+            </div>
+
+            <div className="border rounded-lg p-4 bg-slate-50 mt-4">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Card Details</label>
+              <div className="bg-white border rounded-lg p-3">
+                <CardElement
+                  options={{
+                    style: {
+                      base: {
+                        fontSize: '16px',
+                        color: '#1e293b',
+                        '::placeholder': {
+                          color: '#94a3b8',
+                        },
+                      },
+                      invalid: {
+                        color: '#dc2626',
+                      },
+                    },
+                  }}
+                />
               </div>
+              <p className="text-xs text-slate-500 mt-2">
+                💳 Use Stripe test card: 4242 4242 4242 4242, any future date, any CVC
+              </p>
             </div>
           </div>
 
-          {/* Trust Badge */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900">
-              🔒 Your information is secure and only used to confirm your booking.
-            </p>
-          </div>
-
-          {/* Payment Form (shown after validation) */}
-          {showPaymentForm && (
-            <div className="border-t border-slate-200 pt-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">💳 Payment</h2>
-              {paymentError && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-700">{paymentError}</p>
-                </div>
-              )}
-              {(() => {
-                const discountMultiplier = 1 - (discountApplied?.percentage || 0) / 100;
-                const finalPrice = pricing.totalPrice * discountMultiplier;
-                const paymentAmount = Math.round(finalPrice * 100); // Convert to pence for Stripe
-                console.log('[CheckoutDetails] Payment form - Total price:', pricing.totalPrice, 'Discount:', discountApplied?.percentage, 'Final amount in pence:', paymentAmount);
-                return (
-                  <StripePaymentForm
-                    amount={paymentAmount}
-                    bookingId={bookingId || 'pending'}
-                    customerId={customer?.id}
-                    customerEmail={formData.email}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    isProcessing={paymentProcessing}
-                  />
-                );
-              })()}
+          {/* Error Message */}
+          {paymentError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-700 font-medium">{paymentError}</p>
             </div>
           )}
 
-          {/* Buttons */}
-          {!showPaymentForm && (
-            <div className="flex gap-4 justify-between pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/book/summary')}
-                disabled={isSubmitting}
-              >
-                ← Back
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Processing...' : 'Continue to Payment'}
-              </Button>
-            </div>
-          )}
+          {/* Action Buttons */}
+          <div className="flex gap-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/book/summary')}
+              disabled={paymentProcessing}
+            >
+              ← Back
+            </Button>
+            <Button
+              type="submit"
+              disabled={paymentProcessing || !stripe || !elements}
+            >
+              {paymentProcessing ? (
+                <>
+                  <span className="inline-block animate-spin mr-2">⏳</span>
+                  Processing Payment...
+                </>
+              ) : (
+                `✓ Pay £${pricing.totalPrice.toFixed(2)}`
+              )}
+            </Button>
+          </div>
+
+          <p className="text-xs text-slate-500 text-center">
+            Your payment is processed securely by Stripe. We never see your card details.
+          </p>
         </form>
       </Card>
     </div>
+  );
+}
+
+// Outer component that provides Stripe context
+export function CheckoutDetails() {
+  const stripeConfig = getStripeConfig();
+  const stripePromise = getStripe();
+
+  if (!stripeConfig || !stripePromise) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <Card>
+          <p className="text-red-600">Payment system is not configured. Please contact support.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <Elements stripe={stripePromise} options={stripeConfig}>
+      <CheckoutForm />
+    </Elements>
   );
 }

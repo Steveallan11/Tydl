@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { BookingFormData } from '../types/booking';
 import { calculatePricing, PricingBreakdown } from '../lib/pricing';
-import { createBooking, updateCustomerProfile, sendNotification } from '../lib/supabase';
+import { createBooking, updateCustomerProfile, sendNotification, updateBookingPaymentIntentId } from '../lib/supabase';
 import { sendBookingConfirmationEmail } from '../lib/email';
 
 interface BookingContextType {
@@ -73,12 +73,17 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const submitBooking = async (customerId: string) => {
+  const submitBooking = async (customerId: string, paymentIntentId?: string) => {
     setIsSubmitting(true);
     try {
       // Use the customer ID passed from the auth context
       if (!customerId) {
         throw new Error('No customer logged in');
+      }
+
+      // Payment should already be processed before this is called
+      if (!paymentIntentId) {
+        console.warn('[BookingContext] No payment intent ID provided - booking may not be paid');
       }
 
       // Normalize service type: convert hyphens to underscores for database
@@ -102,6 +107,16 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       });
 
       setBookingId(booking.id);
+
+      // Update job_financials with actual booking ID if we have payment intent
+      if (paymentIntentId) {
+        try {
+          await updateBookingPaymentIntentId(booking.id, paymentIntentId);
+        } catch (err) {
+          console.warn('[BookingContext] Failed to link payment intent to booking:', err);
+          // Don't block the booking if this fails
+        }
+      }
 
       // Save customer details to profile for future bookings
       try {

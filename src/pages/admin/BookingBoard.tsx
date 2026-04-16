@@ -116,9 +116,12 @@ const KanbanColumn = ({
 export function BookingBoard() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { bookings, updateStatus, cleaners } = useAdmin();
+  const { bookings, assignCleaner, cleaners } = useAdmin();
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
   const [selectedCleaner, setSelectedCleaner] = useState<string | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Organize bookings by status
   const pendingBookings = bookings.filter(b => b.status === 'pending');
@@ -128,13 +131,44 @@ export function BookingBoard() {
 
   const handleAssignCleaner = (bookingId: string) => {
     setSelectedBooking(bookingId);
+    setErrorMessage(null);
+    setSuccessMessage(null);
   };
 
-  const handleConfirmAssignment = () => {
-    if (selectedBooking && selectedCleaner) {
-      updateStatus(selectedBooking, 'assigned');
-      setSelectedBooking(null);
-      setSelectedCleaner(null);
+  const handleConfirmAssignment = async () => {
+    if (!selectedBooking || !selectedCleaner) {
+      setErrorMessage('Please select both booking and cleaner');
+      return;
+    }
+
+    try {
+      setIsAssigning(true);
+      setErrorMessage(null);
+
+      // Call assignCleaner which triggers notifications
+      const success = await assignCleaner(selectedBooking, selectedCleaner);
+
+      if (success) {
+        // Get cleaner name for success message
+        const cleaner = cleaners.find(c => c.id === selectedCleaner);
+        const cleanerName = cleaner ? `${cleaner.firstName} ${cleaner.lastName}` : 'Cleaner';
+
+        setSuccessMessage(`✓ Assigned to ${cleanerName}! Notifications sent.`);
+
+        // Clear form and show success for 2 seconds
+        setSelectedBooking(null);
+        setSelectedCleaner(null);
+
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 3000);
+      } else {
+        setErrorMessage('Failed to assign cleaner');
+      }
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Error assigning cleaner');
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -194,6 +228,13 @@ export function BookingBoard() {
           />
         </div>
 
+        {/* Success Message */}
+        {successMessage && (
+          <div className="max-w-md mx-auto mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-green-700 font-medium">{successMessage}</p>
+          </div>
+        )}
+
         {/* Assignment Modal / Form */}
         {selectedBooking && (
           <Card className="max-w-md mx-auto">
@@ -227,6 +268,7 @@ export function BookingBoard() {
                         value={cleaner.id}
                         checked={selectedCleaner === cleaner.id}
                         onChange={(e) => setSelectedCleaner(e.target.value)}
+                        disabled={isAssigning}
                         className="w-4 h-4"
                       />
                       <div className="flex-1">
@@ -243,20 +285,35 @@ export function BookingBoard() {
               </div>
             </div>
 
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-700 text-sm font-medium">{errorMessage}</p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => setSelectedBooking(null)}
                 className="flex-1"
+                disabled={isAssigning}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleConfirmAssignment}
-                disabled={!selectedCleaner}
+                disabled={!selectedCleaner || isAssigning}
                 className="flex-1"
               >
-                Assign
+                {isAssigning ? (
+                  <>
+                    <span className="inline-block animate-spin mr-2">⏳</span>
+                    Assigning...
+                  </>
+                ) : (
+                  '✓ Assign & Notify'
+                )}
               </Button>
             </div>
           </Card>

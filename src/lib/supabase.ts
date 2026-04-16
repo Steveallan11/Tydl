@@ -435,6 +435,27 @@ export async function updateBookingStatus(bookingId: string, status: string) {
   return data;
 }
 
+export async function updateBookingPaymentIntentId(bookingId: string, paymentIntentId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('job_financials')
+      .update({
+        booking_id: bookingId,
+        stripe_payment_id: paymentIntentId,
+        payment_status: 'captured',
+      })
+      .eq('stripe_payment_id', paymentIntentId) // Match by temp payment intent
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error('[updateBookingPaymentIntentId] Error:', err);
+    throw err;
+  }
+}
+
 export async function assignCleanerToBooking(
   bookingId: string,
   cleanerId: string
@@ -451,6 +472,119 @@ export async function assignCleanerToBooking(
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Assign cleaner AND send notifications to both cleaner and customer
+ * This is the complete workflow that should be called from admin dashboard
+ */
+export async function assignCleanerWithNotifications(
+  bookingId: string,
+  cleanerId: string
+) {
+  try {
+    // Step 1: Get booking details
+    const booking = await getBookingById(bookingId);
+    if (!booking) throw new Error('Booking not found');
+
+    // Step 2: Get cleaner details
+    const cleaner = await getCleanerById(cleanerId);
+    if (!cleaner) throw new Error('Cleaner not found');
+
+    // Step 3: Assign cleaner
+    const updatedBooking = await assignCleanerToBooking(bookingId, cleanerId);
+
+    // Step 4: Send notifications (non-blocking - don't fail if emails fail)
+    const emailPromises = [];
+
+    // Send email to cleaner about new job
+    if (cleaner.email) {
+      const sendCleanerEmailPromise = (async () => {
+        try {
+          const { sendCleanerJobNotificationEmail } = await import('./email');
+          await sendCleanerJobNotificationEmail(
+            cleaner.email,
+            `${cleaner.first_name} ${cleaner.last_name}`,
+            {
+              bookingId,
+              customerName: `${booking.customer.first_name} ${booking.customer.last_name}`,
+              customerPhone: booking.customer.phone || 'Not provided',
+              address: booking.customer.full_address || 'Address not provided',
+              scheduledDate: booking.scheduled_date,
+              scheduledTime: booking.scheduled_time,
+              serviceType: booking.service_type.replace('_', ' '),
+              totalPrice: booking.total_price,
+              estimatedDuration: 2.5, // TODO: Get from pricing calculation
+            }
+          );
+          console.log(`[assignCleanerWithNotifications] Cleaner email sent to ${cleaner.email}`);
+        } catch (err) {
+          console.error('[assignCleanerWithNotifications] Failed to send cleaner email:', err);
+        }
+      })();
+      emailPromises.push(sendCleanerEmailPromise);
+    }
+
+    // Send email to customer about assignment
+    if (booking.customer.email) {
+      const sendCustomerEmailPromise = (async () => {
+        try {
+          const { sendCustomerCleanerAssignedEmail } = await import('./email');
+          await sendCustomerCleanerAssignedEmail(
+            booking.customer.email,
+            booking.customer.first_name,
+            {
+              cleanerName: `${cleaner.first_name} ${cleaner.last_name}`,
+              cleanerRating: cleaner.rating || 0,
+              cleanerPhone: cleaner.phone || 'Not provided',
+              bookingId,
+              scheduledDate: booking.scheduled_date,
+              scheduledTime: booking.scheduled_time,
+            }
+          );
+          console.log(`[assignCleanerWithNotifications] Customer email sent to ${booking.customer.email}`);
+        } catch (err) {
+          console.error('[assignCleanerWithNotifications] Failed to send customer email:', err);
+        }
+      })();
+      emailPromises.push(sendCustomerEmailPromise);
+    }
+
+    // Send in-app notifications to both
+    const notificationPromises = [
+      // Notify cleaner
+      sendNotification(
+        cleanerId,
+        'cleaner',
+        'job_assigned',
+        `New Job: ${booking.customer.first_name} ${booking.customer.last_name}`,
+        `${booking.service_type.replace('_', ' ')} on ${booking.scheduled_date} at ${booking.scheduled_time}`,
+        { bookingId, customerId: booking.customer_id },
+        'in-app'
+      ).catch(err => console.error('[assignCleanerWithNotifications] Failed to send cleaner notification:', err)),
+
+      // Notify customer
+      sendNotification(
+        booking.customer_id,
+        'customer',
+        'cleaner_assigned',
+        `Your cleaner has been assigned!`,
+        `${cleaner.first_name} ${cleaner.last_name} (${cleaner.rating}⭐) will be your cleaner for this job`,
+        { bookingId, cleanerId },
+        'in-app'
+      ).catch(err => console.error('[assignCleanerWithNotifications] Failed to send customer notification:', err)),
+    ];
+
+    // Wait for all notifications (but don't fail if they error)
+    await Promise.all([...emailPromises, ...notificationPromises]).catch(err => {
+      console.warn('[assignCleanerWithNotifications] Some notifications failed (non-blocking):', err);
+    });
+
+    return updatedBooking;
+  } catch (error: any) {
+    console.error('[assignCleanerWithNotifications] Error:', error);
+    throw error;
+  }
 }
 
 // ============================================================================

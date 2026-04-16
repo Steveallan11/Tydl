@@ -5,6 +5,7 @@ import {
   getBookings,
   getCleaners,
   assignCleanerToBooking as assignCleanerToBookingSupabase,
+  assignCleanerWithNotifications,
   updateBookingStatus as updateBookingStatusSupabase,
   getDashboardStats,
   getAllJobFinancials,
@@ -177,7 +178,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const assignCleaner = async (bookingId: string, cleanerId: string): Promise<boolean> => {
     try {
       setError(null);
-      await assignCleanerToBookingSupabase(bookingId, cleanerId);
+      console.log('[AdminContext] Assigning cleaner:', { bookingId, cleanerId });
+
+      // Use the new function that sends notifications to both cleaner and customer
+      await assignCleanerWithNotifications(bookingId, cleanerId);
+
+      console.log('[AdminContext] Cleaner assigned and notifications sent');
       await refreshData();
       return true;
     } catch (err: any) {
