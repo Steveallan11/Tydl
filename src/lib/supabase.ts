@@ -332,8 +332,17 @@ export async function createBooking(bookingData: {
   scheduled_date: string;
   scheduled_time: string;
   customer_notes?: string;
-  needs_before_after_images?: boolean;
 }) {
+  console.log('[createBooking] Inserting booking with data:', {
+    customer_id: bookingData.customer_id,
+    service_type: bookingData.service_type,
+    property_size: bookingData.property_size,
+    supplies: bookingData.supplies,
+    frequency: bookingData.frequency,
+    scheduled_date: bookingData.scheduled_date,
+    scheduled_time: bookingData.scheduled_time,
+  });
+
   const { data, error } = await supabase
     .from('bookings')
     .insert([
@@ -345,7 +354,17 @@ export async function createBooking(bookingData: {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[createBooking] Error:', {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw error;
+  }
+
+  console.log('[createBooking] Success, booking ID:', data?.id);
   return data;
 }
 
@@ -593,13 +612,18 @@ export async function assignCleanerWithNotifications(
 // CLEANERS
 // ============================================================================
 
-export async function getCleaners(verification_status = 'verified') {
+export async function getCleaners(verification_status?: string) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('cleaners')
-      .select('*')
-      .eq('verification_status', verification_status)
-      .order('rating', { ascending: false });
+      .select('*');
+
+    // Only filter by verification_status if specified
+    if (verification_status) {
+      query = query.eq('verification_status', verification_status);
+    }
+
+    const { data, error } = await query.order('rating', { ascending: false });
 
     // If permission denied (406), return empty array instead of throwing
     if (error) {
@@ -627,6 +651,36 @@ export async function getCleanerById(cleanerId: string) {
 
   if (error) throw error;
   return data;
+}
+
+export async function updateCleaner(cleanerId: string, updates: any) {
+  try {
+    const { data, error } = await supabase
+      .from('cleaners')
+      .update({
+        first_name: updates.firstName,
+        last_name: updates.lastName,
+        email: updates.email,
+        phone: updates.phone,
+        postcode: updates.postcode,
+        verification_status: updates.verificationStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', cleanerId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[updateCleaner] Error:', error);
+      throw error;
+    }
+
+    console.log('[updateCleaner] Successfully updated cleaner:', cleanerId);
+    return data;
+  } catch (error: any) {
+    console.error('[updateCleaner] Error updating cleaner:', error);
+    throw error;
+  }
 }
 
 export async function createCleanerAdmin(cleanerData: {

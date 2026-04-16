@@ -93,34 +93,49 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
         throw new Error('No customer logged in');
       }
 
-      // Payment should already be processed before this is called
-      if (!paymentIntentId) {
-        console.warn('[BookingContext] No payment intent ID provided - booking may not be paid');
+      // Validate required fields
+      if (!formData.serviceType) {
+        throw new Error('Service type is required');
+      }
+      if (!formData.propertySize) {
+        throw new Error('Property size is required');
+      }
+      if (!formData.scheduledDate) {
+        throw new Error('Scheduled date is required');
+      }
+      if (!formData.scheduledTime) {
+        throw new Error('Scheduled time is required');
       }
 
-      // Keep UI slugs aligned to the database check constraints.
-      const normalizedServiceType = toBookingServiceType(formData.serviceType);
-      const normalizedPropertySize = formData.propertySize || '';
-      const normalizedFrequency = formData.frequency || 'once';
+      // Use values as-is (database expects hyphenated format like 'two-bed', 'one-off-clean', etc)
+      const serviceType = formData.serviceType;
+      const propertySize = formData.propertySize;
+      const frequency = formData.frequency || 'once';
 
-      if (!normalizedServiceType) {
-        throw new Error(`Unsupported service type: ${formData.serviceType || 'missing'}`);
-      }
+      console.log('[submitBooking] Booking values:', {
+        serviceType,
+        propertySize,
+        frequency,
+        supplies: formData.supplies,
+        scheduledDate: formData.scheduledDate,
+        scheduledTime: formData.scheduledTime,
+      });
 
       // Create booking in database
       const booking = await createBooking({
         customer_id: customerId,
-        service_type: normalizedServiceType,
-        property_size: normalizedPropertySize,
+        service_type: serviceType,
+        property_size: propertySize,
         supplies: formData.supplies || 'platform',
-        frequency: normalizedFrequency,
+        frequency: frequency,
         add_ons: formData.addOns || [],
         total_price: pricing.totalPrice,
         scheduled_date: formData.scheduledDate!,
         scheduled_time: formData.scheduledTime!,
         customer_notes: formData.customerNotes,
-        needs_before_after_images: formData.needsBeforeAfterImages || false,
       });
+
+      console.log('[submitBooking] Booking created successfully:', booking.id);
 
       setBookingId(booking.id);
 
@@ -141,6 +156,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       // Send confirmation email
       if (formData.email && formData.firstName && formData.lastName) {
         try {
+          console.log('[submitBooking] Sending confirmation email to:', formData.email);
           await sendBookingConfirmationEmail(formData.email, formData.firstName, {
             bookingId: booking.id,
             serviceType: formData.serviceType || 'cleaning',
@@ -148,8 +164,10 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             scheduledTime: formData.scheduledTime || '09:00',
             totalPrice: pricing.totalPrice,
           });
+          console.log('[submitBooking] Confirmation email sent successfully');
 
           // Also send in-app notification
+          console.log('[submitBooking] Sending in-app notification...');
           await sendNotification(
             customerId,
             'customer',
@@ -159,8 +177,12 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
             { bookingId: booking.id },
             'in-app'
           );
-        } catch (emailError) {
-          console.error('Failed to send confirmation email:', emailError);
+          console.log('[submitBooking] In-app notification sent');
+        } catch (emailError: any) {
+          console.error('[submitBooking] Error sending confirmation:', {
+            message: emailError.message,
+            code: emailError.code,
+          });
           // Don't block booking if email fails
         }
       }

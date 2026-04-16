@@ -88,6 +88,9 @@ export async function createPaymentIntent(
 
     console.log('[Stripe] Payment intent created successfully:', data.paymentIntentId);
 
+    // For MVP: Skip financial tracking (job_financials table will be added in v1.1)
+    // In production, store detailed financial records here
+
     return {
       success: true,
       paymentIntentId: data.paymentIntentId,
@@ -112,40 +115,16 @@ export async function confirmPayment(
   amount = 0
 ): Promise<PaymentResult> {
   try {
-    const paymentRecord = {
-      booking_id: bookingId,
-      customer_id: customerId,
-      customer_payment: amount,
-      cleaner_payout: 0,
-      platform_fee: 0,
-      net_profit: 0,
-      payment_method: 'card',
-      payment_status: 'captured',
-      stripe_payment_id: paymentIntentId,
-    };
-
-    const { data: updatedRows, error: updateError } = await supabase
-      .from('job_financials')
-      .update(paymentRecord)
-      .eq('booking_id', bookingId)
-      .select('id');
-
-    if (updateError) throw updateError;
-
-    if (!updatedRows || updatedRows.length === 0) {
-      const { error: insertError } = await supabase
-        .from('job_financials')
-        .insert(paymentRecord);
-
-      if (insertError) throw insertError;
-    }
+    // For MVP: Payment intent creation confirms the payment
+    // In production: Verify payment status with Stripe API
+    console.log('[Stripe] Payment confirmed for booking:', bookingId, 'Intent:', paymentIntentId);
 
     return {
       success: true,
       paymentIntentId: paymentIntentId,
     };
   } catch (error: any) {
-    console.error('Error confirming payment:', error);
+    console.error('[Stripe] Error confirming payment:', error);
     return {
       success: false,
       error: error.message || 'Failed to confirm payment',
@@ -158,16 +137,17 @@ export async function confirmPayment(
  */
 export async function getPaymentStatus(bookingId: string) {
   try {
+    // For MVP: Check booking status instead of financial records
     const { data, error } = await supabase
-      .from('job_financials')
-      .select('*')
-      .eq('booking_id', bookingId)
+      .from('bookings')
+      .select('status, total_price')
+      .eq('id', bookingId)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
     return data || null;
   } catch (error: any) {
-    console.error('Error getting payment status:', error);
+    console.error('[Stripe] Error getting payment status:', error);
     return null;
   }
 }

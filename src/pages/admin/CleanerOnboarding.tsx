@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
+import { DebugPanel } from '../../components/common/DebugPanel';
 import { useAdmin } from '../../context/AdminContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -85,7 +86,7 @@ export function CleanerOnboarding() {
       // Create a temporary cleaner ID for now
       const cleanerId = `cleaner_${Date.now()}`;
 
-      await onboardCleaner({
+      const success = await onboardCleaner({
         cleanerId,
         email: formData.email,
         firstName: formData.firstName,
@@ -100,24 +101,27 @@ export function CleanerOnboarding() {
         payoutFrequency: formData.payoutFrequency,
       });
 
-      setSuccessMessage(`✓ Cleaner ${formData.firstName} ${formData.lastName} onboarded successfully!`);
+      if (success) {
+        setSuccessMessage(`✓ Cleaner ${formData.firstName} ${formData.lastName} onboarded successfully!`);
 
-      // Reset form
-      setFormData({
-        email: '',
-        firstName: '',
-        lastName: '',
-        phone: '',
-        postcode: '',
-        accountHolderName: '',
-        sortCode: '',
-        accountNumber: '',
-        compensationType: 'hourly',
-        hourlyRate: '16',
-        payoutFrequency: 'weekly',
-      });
+        // Reset form
+        setFormData({
+          email: '',
+          firstName: '',
+          lastName: '',
+          phone: '',
+          postcode: '',
+          accountHolderName: '',
+          sortCode: '',
+          accountNumber: '',
+          compensationType: 'hourly',
+          hourlyRate: '16',
+          payoutFrequency: 'weekly',
+        });
 
-      setTimeout(() => setSuccessMessage(''), 3000);
+        // Redirect back to cleaners management after success
+        setTimeout(() => navigate('/admin/cleaners'), 2000);
+      }
     } catch (error: any) {
       setErrors({ submit: error.message || 'Failed to onboard cleaner' });
     } finally {
@@ -126,11 +130,21 @@ export function CleanerOnboarding() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Onboard Cleaner</h1>
-        <p className="text-slate-600">Add a new cleaner to the platform</p>
-      </div>
+    <>
+      <DebugPanel />
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Onboard Cleaner</h1>
+            <p className="text-slate-600">Add a new cleaner to the platform</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/admin/cleaners')}
+          >
+            ← Back
+          </Button>
+        </div>
 
       {successMessage && (
         <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
@@ -348,6 +362,7 @@ export function CleanerOnboarding() {
           </div>
         </form>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }
