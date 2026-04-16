@@ -138,7 +138,7 @@ export function CheckoutDetails() {
       <div className="max-w-2xl mx-auto px-6 py-12">
         <StepIndicator currentStep={8} totalSteps={9} />
 
-      <Card>
+        <Card>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Confirm Your Details</h1>
         <p className="text-slate-600 mb-6">We've pre-filled your information from your profile. Update if needed.</p>
 
