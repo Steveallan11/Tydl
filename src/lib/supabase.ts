@@ -530,12 +530,13 @@ export async function assignCleanerWithNotifications(
               bookingId,
               customerName: `${booking.customer.first_name} ${booking.customer.last_name}`,
               customerPhone: booking.customer.phone || 'Not provided',
+              customerNotes: booking.customer_notes || '',
               address: booking.customer.full_address || 'Address not provided',
               scheduledDate: booking.scheduled_date,
               scheduledTime: booking.scheduled_time,
-              serviceType: booking.service_type.replace('_', ' '),
+              propertySize: booking.property_size || 'Not specified',
+              serviceType: booking.service_type,
               totalPrice: booking.total_price,
-              estimatedDuration: 2.5, // TODO: Get from pricing calculation
             }
           );
           console.log(`[assignCleanerWithNotifications] Cleaner email sent to ${cleaner.email}`);

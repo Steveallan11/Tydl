@@ -100,21 +100,6 @@ export function CheckoutDetails() {
     try {
       setPaymentProcessing(true);
       setPaymentError('');
-      const pendingBookingRef = `pending:${customer.id}:${Date.now()}`;
-
-      // Step 1: Create Payment Intent
-      const paymentResult = await createPaymentIntent(
-        pendingBookingRef,
-        customer.id,
-        pricing.totalPrice,
-        `${formData.serviceType} - ${formData.propertySize}`,
-        formData.email
-      );
-
-      if (!paymentResult.success || !paymentResult.clientSecret) {
-        setPaymentError(paymentResult.error || 'Failed to initialize payment');
-        return;
-      }
 
       console.log('[CheckoutDetails] Processing payment with card:', cardNumber.slice(-4));
 
@@ -321,23 +306,3 @@ export function CheckoutDetails() {
 }
 
 // Outer component that provides Stripe context
-export function CheckoutDetails() {
-  const stripeConfig = getStripeConfig();
-  const stripePromise = getStripe();
-
-  if (!stripeConfig || !stripePromise) {
-    return (
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <Card>
-          <p className="text-red-600">Payment system is not configured. Please contact support.</p>
-        </Card>
-      </div>
-    );
-  }
-
-  return (
-    <Elements stripe={stripePromise} options={stripeConfig}>
-      <CheckoutForm />
-    </Elements>
-  );
-}
